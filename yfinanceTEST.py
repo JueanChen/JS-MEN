@@ -7,44 +7,41 @@ tickers = ['AAPL', 'NVDA', 'MSFT']
 period = '5d'
 interval = '5m'
 db_file = 'stock_data.db'
+table_name = 'stocks_data'
 
 print(f"Downloading data for {', '.join(tickers)}...")
 
-# Download the data for all tickers at once
-# yfinance returns a pandas DataFrame with a multi-level column index
+# Download the data for all tickers
 try:
     data = yf.download(tickers=tickers, period=period, interval=interval)
     
     if data.empty:
         print("No data downloaded. Check ticker symbols or connection.")
     else:
-        # Connect to the SQLite database (this will create the file if it doesn't exist)
+        # --- Data Transformation ---
+        # The downloaded data has a multi-level column index (e.g., ('Open', 'AAPL')).
+        # We stack the 'Ticker' level from columns to rows to create a single 'Ticker' column.
+        # This reshapes the DataFrame from wide to long format.
+        data_stacked = data.stack(level='Ticker')
+
+        # Reset the index to turn the multi-level index (Datetime, Ticker) into columns.
+        consolidated_df = data_stacked.reset_index()
+        
+        # --- Database Operation ---
+        # Connect to the SQLite database
         conn = sqlite3.connect(db_file)
         print(f"Successfully connected to {db_file}")
 
-        # yfinance returns data with a multi-level column structure: (Metric, Ticker)
-        # We'll loop through each ticker and save its data to a separate table
-        for ticker in tickers:
-            # Select the data for the current ticker
-            # The .xs() method extracts a cross-section from the DataFrame
-            ticker_df = data.xs(ticker, level='Ticker', axis=1)
-
-            # Remove rows with all NaN values, which can occur for non-trading times
-            ticker_df.dropna(how='all', inplace=True)
-
-            if not ticker_df.empty:
-                # Save the ticker's DataFrame to a SQL table named after the ticker
-                # if_exists='replace' will overwrite the table if it already exists
-                print(f"Saving data for {ticker}...")
-                ticker_df.to_sql(ticker, conn, if_exists='replace', index=True)
-                print(f"Data for {ticker} saved to table '{ticker}'.")
-            else:
-                print(f"No data to save for {ticker} for the specified period.")
+        # Save the single, consolidated DataFrame to one SQL table
+        # if_exists='replace' will overwrite the table if it already exists
+        # index=False prevents pandas from writing the DataFrame index as a column
+        print(f"Saving all data to table '{table_name}'...")
+        consolidated_df.to_sql(table_name, conn, if_exists='replace', index=False)
+        print(f"All data successfully saved.")
 
         # Close the database connection
         conn.close()
-        print(f"Database connection closed. Process complete.")
+        print("Database connection closed.")
 
 except Exception as e:
     print(f"An error occurred: {e}")
-
