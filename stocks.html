@@ -354,7 +354,7 @@
         </div>
 
         <div class="chart-container">
-          <div class="loader" id="chart-loader" style="display: block"></div>
+          <!-- <div class="loader" id="chart-loader" style="display: block"></div> -->
           <canvas id="stockChart"></canvas>
         </div>
 
@@ -383,7 +383,7 @@
     </div>
 
     <script>
-      const STOCKS_JSON_PATH = 'C:/Users/chenjuean/Desktop/CJA/JS-MEN/stocks.json'
+      const STOCKS_JSON_PATH = './stocks.json'
 
       // DOM elements
       const stockSelector = document.getElementById('stock-selector')
@@ -427,74 +427,75 @@
           .padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
       }
 
-      // 渲染K线图
+      // 渲染分时折线图
       function renderStockChart(data) {
-        chartLoader.style.display = 'block'
+        // 使用页面已有的canvas
+        const canvas = document.getElementById('stockChart')
+        if (!canvas) return
+        // 自动适应容器宽高
+        canvas.width = 1300
+        canvas.height = 500
 
-        // Destroy previous chart instance before re-rendering
-        if (chartInstance) {
-          chartInstance.destroy()
-          chartInstance = null
-        }
-
-        // Prepare chart data
-        const chartData = []
-
-        // Ensure data exists
-        if (!data || !data.price_data || !data.price_data.timestamp) {
-          console.error('Invalid or missing chart data')
-          chartLoader.style.display = 'none'
-          return
-        }
+        const ctx = canvas.getContext('2d')
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
 
         const priceData = data.price_data
-        for (let i = 0; i < priceData.timestamp.length; i++) {
-          // Validate each data point
-          if (
-            priceData.open[i] &&
-            priceData.high[i] &&
-            priceData.low[i] &&
-            priceData.close[i]
-          ) {
-            chartData.push({
-              x: new Date(priceData.timestamp[i]),
-              open: priceData.open[i].toFixed(2),
-              high: priceData.high[i].toFixed(2),
-              low: priceData.low[i].toFixed(2),
-              close: priceData.close[i].toFixed(2),
-            })
+        const closes = priceData.close
+        const timestamps = priceData.timestamp
+
+        // 填满canvas，缩小padding
+        const min = Math.min(...closes)
+        const max = Math.max(...closes)
+        const padding = 70
+        const chartWidth = canvas.width - padding * 2
+        const chartHeight = canvas.height - padding * 2
+
+        // 绘制坐标轴
+        ctx.strokeStyle = '#fff'
+        ctx.beginPath()
+        ctx.moveTo(padding, padding)
+        ctx.lineTo(padding, canvas.height - padding)
+        ctx.lineTo(canvas.width - padding, canvas.height - padding)
+        ctx.stroke()
+
+        // 绘制价格折线
+        ctx.strokeStyle = '#007bff'
+        ctx.beginPath()
+        for (let i = 0; i < closes.length; i++) {
+          const x = padding + (i / (closes.length - 1)) * chartWidth
+          const y =
+            canvas.height -
+            padding -
+            ((closes[i] - min) / (max - min)) * chartHeight
+          if (i === 0) {
+            ctx.moveTo(x, y)
+          } else {
+            ctx.lineTo(x, y)
           }
         }
-        // Check for valid data points
-        if (chartData.length === 0) {
-          console.error('No valid data points for chart')
-          chartLoader.style.display = 'none'
-          return
-        }
+        ctx.stroke()
 
-        // Set price indicators - only use valid data
-        const lastPoint = chartData[chartData.length - 1]
-        document.getElementById('current-price').textContent = formatCurrency(
-          lastPoint.close
-        )
-        document.getElementById('open-price').textContent = formatCurrency(
-          priceData.open[priceData.open.length - 1]
-        )
-        document.getElementById('volume').textContent = formatNumber(
-          priceData.volume[priceData.volume.length - 1]
-        )
+        // 绘制价格刻度
+        ctx.fillStyle = '#fff'
+        ctx.font = '16px Arial'
+        ctx.fillText(max.toFixed(2), 5, padding + 5)
+        ctx.fillText(min.toFixed(2), 5, canvas.height - padding)
 
-        if (chartData.length > 1) {
-          const prevLastPoint = chartData[chartData.length - 2]
-          document.getElementById('daily-change').innerHTML = calculateChange(
-            lastPoint.close,
-            prevLastPoint.close
+        // 绘制时间刻度（仅首尾）
+        if (timestamps && timestamps.length > 0) {
+          ctx.fillText(
+            formatDateTime(timestamps[0]),
+            padding,
+            canvas.height - padding + 15
           )
-          document.getElementById('daily-change').className =
-            lastPoint.close >= prevLastPoint.close ? 'positive' : 'negative'
+          ctx.fillText(
+            formatDateTime(timestamps[timestamps.length - 1]),
+            canvas.width - padding - 80,
+            canvas.height - padding + 15
+          )
         }
-        // Create new chart instance
       }
+
       // 渲染数据表格
       function renderStocksTable(data) {
         const tableBody = document.getElementById('stocks-table-body')
