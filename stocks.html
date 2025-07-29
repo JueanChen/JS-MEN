@@ -98,6 +98,16 @@
         color: var(--primary);
       }
 
+      .btn-add-trade {
+        background-color:#2563eb;
+        color:#fff;
+        padding: 10px 40px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: bold;
+      }
+
       .panel {
         background-color: var(--card-bg);
         border-radius: 16px;
@@ -133,21 +143,36 @@
       .filter-group {
         flex: 1;
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
+        align-items: center;
         max-width: 400px;
+        font-size: 18px;
+        font-weight: bold;
       }
 
       .filter-group label {
-        font-size: 14px;
         color: var(--gray);
-        margin-bottom: 5px;
       }
 
-      .filter-group select {
-        padding: 10px 12px;
+      .filter-group input {
+        padding: 10px 10px 10px 10px;
+        margin-left: 12px;
         border: 1px solid var(--border);
         border-radius: 8px;
         background-color: white;
+        font-size: 16px;
+      }
+
+      .filter-group button {
+        margin-left: 10px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 16px;
       }
 
       .chart-container {
@@ -306,10 +331,9 @@
         </div>
 
         <ul class="nav-tabs">
-          <li><a href="../html/assets.html">Asset Overview</a></li>
-          <li><a href="../html/positions.html">Position Management</a></li>
-          <li><a href="../html/trades.html">Trade Records</a></li>
-          <li><a href="#" class="active">Stock Market</a></li>
+          <li><a href="./positions.html">Asset Management</a></li>
+          <li><a href="./trades.html">Trade Management</a></li>
+          <li><a href="#" class="active">Stock Trading</a></li>
         </ul>
       </header>
 
@@ -322,14 +346,20 @@
               <span id="update-time">2025-07-30 14:30:00</span>
             </p>
           </div>
+          <button class="btn-add-trade" id="add-trade-btn">
+            <i class="fas fa-plus"></i> Add Trade
+          </button>
         </div>
 
         <!-- Simplified filter bar - only keep stock selector -->
         <div class="filter-bar">
           <div class="filter-group">
             <label>Select Stock</label>
-            <select id="stock-selector">
-              <option value="loading">Loading...</option>
+            <select id="stock-selector" style="margin-left:12px;padding:10px 100px 10px 10px;border-radius:8px;background:white;font-size:16px;">
+              <option value="C">C</option>
+              <option value="AMZN">AMZN</option>
+              <option value="TSLA">TSLA</option>
+              <option value="AAPL">AAPL</option>
             </select>
           </div>
         </div>
@@ -380,11 +410,47 @@
           </table>
         </div>
       </div>
+
+      <!-- Add Trade Modal -->
+      <div id="add-trade-modal" style="display:none;position:fixed;z-index:1000;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.25);align-items:center;justify-content:center;">
+        <div style="background:#fff;padding:32px 24px 24px 24px;border-radius:12px;min-width:320px;max-width:95vw;position:relative;box-shadow:0 8px 32px rgba(0,0,0,0.15);">
+          <button class="close-modal" style="position:absolute;right:16px;top:12px;background:none;border:none;font-size:22px;color:#888;cursor:pointer;">&times;</button>
+          <h3 style="margin-bottom:18px;">Add Trade</h3>
+          <form id="trade-form">
+            <div style="margin-bottom:12px;">
+              <label>Trade Type:</label>
+              <select id="trade-type" required style="padding:6px 12px;border-radius:6px;border:1px solid #e2e8f0;">
+                <option value="buy">Buy</option>
+                <option value="sell">Sell</option>
+              </select>
+            </div>
+            <div style="margin-bottom:12px;">
+              <label>Stock ID:</label>
+              <input id="stock-id" type="text" required style="padding:6px 12px;border-radius:6px;border:1px solid #e2e8f0;width:100%;" />
+            </div>
+            <div style="margin-bottom:12px;">
+              <label>Stock Name:</label>
+              <input id="stock-name" type="text" required style="padding:6px 12px;border-radius:6px;border:1px solid #e2e8f0;width:100%;" />
+            </div>
+            <div style="margin-bottom:12px;">
+              <label>Price:</label>
+              <input id="trade-price" type="number" step="0.01" min="0" required style="padding:6px 12px;border-radius:6px;border:1px solid #e2e8f0;width:100%;" />
+            </div>
+            <div style="margin-bottom:12px;">
+              <label>Quantity:</label>
+              <input id="trade-quantity" type="number" min="1" required style="padding:6px 12px;border-radius:6px;border:1px solid #e2e8f0;width:100%;" />
+            </div>
+            <div style="margin-bottom:18px;">
+              <label>Trade Time:</label>
+              <input id="trade-time" type="datetime-local" required style="padding:6px 12px;border-radius:6px;border:1px solid #e2e8f0;width:100%;" />
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;">Submit</button>
+          </form>
+        </div>
+      </div>
     </div>
 
     <script>
-      const STOCKS_JSON_PATH = './stocks.json'
-
       // DOM elements
       const stockSelector = document.getElementById('stock-selector')
       const chartLoader = document.getElementById('chart-loader')
@@ -452,21 +518,36 @@
 
         // 绘制坐标轴
         ctx.strokeStyle = '#fff'
+        ctx.lineWidth = 4
         ctx.beginPath()
         ctx.moveTo(padding, padding)
         ctx.lineTo(padding, canvas.height - padding)
         ctx.lineTo(canvas.width - padding, canvas.height - padding)
         ctx.stroke()
 
+        // 坐标轴名称
+        ctx.save()
+        ctx.fillStyle = '#fff'
+        ctx.font = 'bold 18px Arial'
+        // Y轴名字 Price
+        ctx.translate(35, canvas.height / 2)
+        ctx.rotate(-Math.PI / 2)
+        ctx.textAlign = 'center'
+        ctx.fillText('Price', 0, 0)
+        ctx.restore()
+        // X轴名字 Time
+        ctx.fillStyle = '#fff'
+        ctx.font = 'bold 18px Arial'
+        ctx.textAlign = 'center'
+        ctx.fillText('Time', canvas.width / 2, canvas.height - padding + 35)
+
         // 绘制价格折线
         ctx.strokeStyle = '#007bff'
+        ctx.lineWidth = 3
         ctx.beginPath()
         for (let i = 0; i < closes.length; i++) {
           const x = padding + (i / (closes.length - 1)) * chartWidth
-          const y =
-            canvas.height -
-            padding -
-            ((closes[i] - min) / (max - min)) * chartHeight
+          const y = canvas.height - padding - ((closes[i] - min) / (max - min)) * chartHeight
           if (i === 0) {
             ctx.moveTo(x, y)
           } else {
@@ -477,21 +558,22 @@
 
         // 绘制价格刻度
         ctx.fillStyle = '#fff'
-        ctx.font = '16px Arial'
-        ctx.fillText(max.toFixed(2), 5, padding + 5)
-        ctx.fillText(min.toFixed(2), 5, canvas.height - padding)
+        ctx.font = 'bold 18px Arial' // 加粗价格刻度字体
+        ctx.fillText(max.toFixed(2), 35, padding + 5)
+        ctx.fillText(min.toFixed(2), 35, canvas.height - padding)
 
         // 绘制时间刻度（仅首尾）
         if (timestamps && timestamps.length > 0) {
+          ctx.font = 'bold 18px Arial' // 加粗时间刻度字体
           ctx.fillText(
             formatDateTime(timestamps[0]),
-            padding,
-            canvas.height - padding + 15
+            padding + 70,
+            canvas.height - padding + 35
           )
           ctx.fillText(
             formatDateTime(timestamps[timestamps.length - 1]),
-            canvas.width - padding - 80,
-            canvas.height - padding + 15
+            canvas.width - padding - 30,
+            canvas.height - padding + 35
           )
         }
       }
@@ -543,46 +625,43 @@
 
       // 初始化股票选择器
       function initStockSelector(data) {
-        stockSelector.innerHTML = ''
-
-        Object.keys(data).forEach((ticker) => {
-          const option = document.createElement('option')
-          option.value = ticker
-          option.textContent = `${ticker} (${data[ticker].ticker})`
-          stockSelector.appendChild(option)
-        })
-
-        // 设置默认值
-        stockSelector.value = selectedStock
+        // 自动填充第一个股票代码
+        const tickers = Object.keys(data)
+        if (tickers.length > 0) {
+          stockSelector.value = tickers[0]
+          selectedStock = tickers[0]
+        }
       }
 
       // 应用筛选器
       function applyFilters() {
-        selectedStock = stockSelector.value
+        selectedStock = stockSelector.value.trim().toUpperCase()
         if (stocksData[selectedStock]) {
           renderStockChart(stocksData[selectedStock])
           renderStocksTable(stocksData[selectedStock])
+        } else {
+          // 未找到股票，清空图表和表格
+          const canvas = document.getElementById('stockChart')
+          if (canvas) {
+            const ctx = canvas.getContext('2d')
+            ctx.clearRect(0, 0, canvas.width, canvas.height)
+          }
+          document.getElementById('stocks-table-body').innerHTML =
+            '<tr><td colspan="7" style="text-align: center; color: var(--danger);">No Data</td></tr>'
         }
       }
 
       // 加载stocks.json文件
-      async function loadStocksData() {
+      async function loadStocksData(ticker) {
         try {
-          const response = await fetch(STOCKS_JSON_PATH)
-
+          const url = 'https://c4rm9elh30.execute-api.us-east-1.amazonaws.com/default/cachedPriceData?ticker=' + ticker
+          const response = await fetch(url)
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`)
           }
-
           const data = await response.json()
-
-          // 将数组转换为对象格式
-          const stocksObject = {}
-          data.forEach((stock) => {
-            stocksObject[stock.ticker] = stock
-          })
-
-          return stocksObject
+          // 返回格式与原stocksData一致
+          return { [ticker]: data }
         } catch (error) {
           console.error('Failed to load data:', error)
           return null
@@ -591,32 +670,55 @@
 
       // 页面初始化
       async function init() {
-        // 加载真实数据
-        stocksData = await loadStocksData()
-
+        // 默认加载AAPL
+        stocksData = await loadStocksData(stockSelector.value)
         if (!stocksData) {
           document.getElementById('chart-loader').style.display = 'none'
           document.getElementById('stocks-table-body').innerHTML =
             '<tr><td colspan="7" style="text-align: center; color: var(--danger);">Failed to load stock data, please check stocks.json file</td></tr>'
           return
         }
-
         initStockSelector(stocksData)
         applyFilters()
-
         // 更新页面时间并设置定时器
         updateDateTime()
         setInterval(updateDateTime, 1000)
-
-        // 设置事件监听器 - 现在只需监听股票选择器的变化
-        stockSelector.addEventListener('change', () => {
-          selectedStock = stockSelector.value
+        // 只监听选择器变化
+        stockSelector.addEventListener('change', async () => {
+          const ticker = stockSelector.value
+          stocksData = await loadStocksData(ticker)
           applyFilters()
         })
       }
+
+      // Add Trade Modal logic
+      document.addEventListener('DOMContentLoaded', function () {
+        // Add Trade modal events
+        document.getElementById('add-trade-btn').addEventListener('click', function () {
+          document.getElementById('add-trade-modal').style.display = 'flex'
+        })
+        document.querySelector('.close-modal').addEventListener('click', function () {
+          document.getElementById('add-trade-modal').style.display = 'none'
+        })
+        document.getElementById('trade-form').addEventListener('submit', function (e) {
+          e.preventDefault()
+          // Get form data
+          const tradeType = document.getElementById('trade-type').value
+          const stockId = document.getElementById('stock-id').value
+          const stockName = document.getElementById('stock-name').value
+          const price = parseFloat(document.getElementById('trade-price').value)
+          const quantity = parseInt(document.getElementById('trade-quantity').value)
+          const tradeTime = document.getElementById('trade-time').value
+          // You can add logic to save this trade to backend or localStorage here
+          document.getElementById('add-trade-modal').style.display = 'none'
+          document.getElementById('trade-form').reset()
+          alert('Trade record added successfully!')
+        })
+      })
 
       // 启动应用
       document.addEventListener('DOMContentLoaded', init)
     </script>
   </body>
+</html>
 </html>
