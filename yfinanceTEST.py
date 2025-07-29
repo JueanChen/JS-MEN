@@ -1,13 +1,13 @@
 import yfinance as yf
-import sqlite3
 import pandas as pd
+from sqlalchemy import create_engine, DECIMAL
 
 # Define the stock tickers and download parameters
 tickers = ['AAPL', 'NVDA', 'MSFT']
 period = '5d'
 interval = '5m'
 db_file = 'stock_data.db'
-table_name = 'stocks_data'
+table_name = 'all_stocks_data'
 
 print(f"Downloading data for {', '.join(tickers)}...")
 
@@ -18,30 +18,54 @@ try:
     if data.empty:
         print("No data downloaded. Check ticker symbols or connection.")
     else:
-        # --- Data Transformation ---
-        # The downloaded data has a multi-level column index (e.g., ('Open', 'AAPL')).
-        # We stack the 'Ticker' level from columns to rows to create a single 'Ticker' column.
-        # This reshapes the DataFrame from wide to long format.
+        # --- 1. Data Transformation ---
+        # Stack the 'Ticker' level from columns to create a 'Ticker' column
         data_stacked = data.stack(level='Ticker')
-
-        # Reset the index to turn the multi-level index (Datetime, Ticker) into columns.
         consolidated_df = data_stacked.reset_index()
+
+        # --- 2. Column Renaming and Formatting ---
+        # Define a mapping for renaming columns
+        column_rename_map = {
+            'Datetime': 'time_stamp',
+            'Ticker': 'ticker',
+            'Open': 'open_price',
+            'High': 'high_price',
+            'Low': 'low_price',
+            'Close': 'close_price',
+            'Volume': 'volume'
+        }
+        consolidated_df.rename(columns=column_rename_map, inplace=True)
         
-        # --- Database Operation ---
-        # Connect to the SQLite database
-        conn = sqlite3.connect(db_file)
-        print(f"Successfully connected to {db_file}")
+        # Format the time_stamp column to 'YYYY-MM-DD HH:MM:SS' string format
+        consolidated_df['time_stamp'] = consolidated_df['time_stamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
 
-        # Save the single, consolidated DataFrame to one SQL table
-        # if_exists='replace' will overwrite the table if it already exists
-        # index=False prevents pandas from writing the DataFrame index as a column
-        print(f"Saving all data to table '{table_name}'...")
-        consolidated_df.to_sql(table_name, conn, if_exists='replace', index=False)
-        print(f"All data successfully saved.")
+        # Select only the columns we need, dropping 'Adj Close'
+        final_df = consolidated_df[['time_stamp', 'ticker', 'open_price', 'high_price', 'low_price', 'close_price', 'volume']]
 
-        # Close the database connection
-        conn.close()
-        print("Database connection closed.")
+        # --- 3. Database Operation ---
+        # Create a SQLAlchemy engine for more control over data types
+        engine = create_engine(f'sqlite:///{db_file}')
+        
+        # Define the desired data types for SQL columns
+        # This ensures prices are stored with fixed precision
+        dtype_mapping = {
+            'open_price': DECIMAL(18, 2),
+            'high_price': DECIMAL(18, 2),
+            'low_price': DECIMAL(18, 2),
+            'close_price': DECIMAL(18, 2)
+        }
+
+        # Save the final DataFrame to the SQL table
+        print(f"Saving formatted data to table '{table_name}'...")
+        final_df.to_sql(
+            table_name, 
+            con=engine, 
+            if_exists='replace', 
+            index=False, 
+            dtype=dtype_mapping
+        )
+        print("All data successfully saved.")
+
 
 except Exception as e:
     print(f"An error occurred: {e}")
