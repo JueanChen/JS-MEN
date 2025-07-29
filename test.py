@@ -1,11 +1,12 @@
 import sqlite3
 
-def round_prices_in_db(db_path):
+tickers = ['AAPL', 'GOOG', 'MSFT', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC']
+def round_prices_in_db(db_path, ticker):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     # 将四个字段的值都更新为保留2位小数
-    cursor.execute("""
-        UPDATE all_stocks_data
+    cursor.execute(f"""
+        UPDATE {ticker}
         SET
             open_price = ROUND(open_price, 2),
             close_price = ROUND(close_price, 2),
@@ -16,4 +17,6 @@ def round_prices_in_db(db_path):
     conn.close()
 
 # 用法示例
-round_prices_in_db('stock_data.db')
+for ticker in tickers:
+    print(f"Rounding prices for {ticker} in database...")
+    round_prices_in_db('stock_data.db', ticker)
