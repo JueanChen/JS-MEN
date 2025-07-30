@@ -493,12 +493,10 @@
           .padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
       }
 
-      // 渲染分时折线图
+      // 渲染分时折线图（改为K线图）
       function renderStockChart(data) {
-        // 使用页面已有的canvas
         const canvas = document.getElementById('stockChart')
         if (!canvas) return
-        // 自动适应容器宽高
         canvas.width = 1300
         canvas.height = 500
 
@@ -506,12 +504,14 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height)
 
         const priceData = data.price_data
+        const opens = priceData.open
         const closes = priceData.close
+        const highs = priceData.high
+        const lows = priceData.low
         const timestamps = priceData.timestamp
 
-        // 填满canvas，缩小padding
-        const min = Math.min(...closes)
-        const max = Math.max(...closes)
+        const min = Math.min(...lows)
+        const max = Math.max(...highs)
         const padding = 70
         const chartWidth = canvas.width - padding * 2
         const chartHeight = canvas.height - padding * 2
@@ -529,42 +529,62 @@
         ctx.save()
         ctx.fillStyle = '#fff'
         ctx.font = 'bold 18px Arial'
-        // Y轴名字 Price
         ctx.translate(35, canvas.height / 2)
         ctx.rotate(-Math.PI / 2)
         ctx.textAlign = 'center'
         ctx.fillText('Price', 0, 0)
         ctx.restore()
-        // X轴名字 Time
         ctx.fillStyle = '#fff'
         ctx.font = 'bold 18px Arial'
         ctx.textAlign = 'center'
         ctx.fillText('Time', canvas.width / 2, canvas.height - padding + 35)
 
-        // 绘制价格折线
-        ctx.strokeStyle = '#007bff'
-        ctx.lineWidth = 3
-        ctx.beginPath()
+        // 绘制K线图
+        ctx.lineWidth = 1
+        const candleWidth = Math.max(3, chartWidth / closes.length * 0.7)
+        const offsetX = 5
+        const offsetY = 5
         for (let i = 0; i < closes.length; i++) {
-          const x = padding + (i / (closes.length - 1)) * chartWidth
-          const y = canvas.height - padding - ((closes[i] - min) / (max - min)) * chartHeight
-          if (i === 0) {
-            ctx.moveTo(x, y)
+          const x = padding + (i / (closes.length - 1)) * chartWidth + offsetX
+          // 计算Y坐标
+          const yOpen = canvas.height - padding - ((opens[i] - min) / (max - min)) * chartHeight - offsetY
+          const yClose = canvas.height - padding - ((closes[i] - min) / (max - min)) * chartHeight - offsetY
+          const yHigh = canvas.height - padding - ((highs[i] - min) / (max - min)) * chartHeight - offsetY
+          const yLow = canvas.height - padding - ((lows[i] - min) / (max - min)) * chartHeight - offsetY
+
+          // 判断涨跌
+          const isUp = closes[i] >= opens[i]
+          ctx.strokeStyle = isUp ? '#10b981' : '#ef4444' // 涨绿色，跌红色
+          ctx.fillStyle = isUp ? '#10b981' : '#ef4444'
+
+          // 绘制影线
+          ctx.beginPath()
+          ctx.moveTo(x, yHigh)
+          ctx.lineTo(x, yLow)
+          ctx.stroke()
+
+          // 绘制K线实体
+          const candleTop = Math.min(yOpen, yClose)
+          const candleHeight = Math.abs(yOpen - yClose)
+          ctx.beginPath()
+          ctx.rect(x - candleWidth / 2, candleTop, candleWidth, candleHeight || 2)
+          if (isUp) {
+            ctx.stroke()
+            ctx.fillRect(x - candleWidth / 2, candleTop, candleWidth, candleHeight || 2)
           } else {
-            ctx.lineTo(x, y)
+            ctx.fill()
           }
         }
-        ctx.stroke()
 
         // 绘制价格刻度
         ctx.fillStyle = '#fff'
-        ctx.font = 'bold 18px Arial' // 加粗价格刻度字体
+        ctx.font = 'bold 18px Arial'
         ctx.fillText(max.toFixed(2), 35, padding + 5)
         ctx.fillText(min.toFixed(2), 35, canvas.height - padding)
 
         // 绘制时间刻度（仅首尾）
         if (timestamps && timestamps.length > 0) {
-          ctx.font = 'bold 18px Arial' // 加粗时间刻度字体
+          ctx.font = 'bold 18px Arial'
           ctx.fillText(
             formatDateTime(timestamps[0]),
             padding + 70,
