@@ -245,6 +245,8 @@ async function getTradesFromDB() {
     });
 }
 
+//ee
+
 
 
 
