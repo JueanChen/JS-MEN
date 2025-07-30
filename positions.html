@@ -9,6 +9,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="./i18n.js"></script>
     <style>
       * {
         margin: 0;
@@ -460,15 +461,6 @@
         background-color: white;
       }
 
-      footer {
-        margin-top: 40px;
-        text-align: center;
-        padding: 20px 0;
-        color: var(--gray);
-        font-size: 14px;
-        border-top: 1px solid var(--border);
-      }
-
       @media (max-width: 1200px) {
         .dashboard-layout {
           grid-template-columns: 1fr;
@@ -519,20 +511,34 @@
       <header>
         <div class="logo">
           <i class="fas fa-chart-line"></i>
-          <h1>Financial Asset Management System</h1>
+          <h1 data-i18n="system_title">Financial Asset Management System</h1>
         </div>
-
-        <ul class="nav-tabs">
-          <li><a href="#" class="active">Asset Management</a></li>
-          <li><a href="./trades.html">Trade Management</a></li>
-          <li><a href="./stocks.html">Stock Trading</a></li>
-        </ul>
+        <div style="display: flex; align-items: center; gap: 20px">
+          <ul class="nav-tabs">
+            <li>
+              <a href="#" class="active" data-i18n="nav_asset">
+                Asset Management
+              </a>
+            </li>
+            <li>
+              <a href="./trades.html" data-i18n="nav_trade">Trade Management</a>
+            </li>
+            <li>
+              <a href="./stocks.html" data-i18n="nav_stock">Stock Trading</a>
+            </li>
+          </ul>
+          <button id="lang-toggle" style="margin-left: 20px; min-width: 60px">
+            中文
+          </button>
+        </div>
       </header>
 
       <!-- 持仓管理内容 -->
       <div class="panel">
         <div class="panel-header">
-          <h2 class="panel-title">Assets Management</h2>
+          <h2 class="panel-title" data-i18n="assets_management">
+            Assets Management
+          </h2>
         </div>
 
         <!-- 持仓概览卡片 -->
@@ -541,7 +547,7 @@
           <div class="summary-card">
             <div class="summary-card-title">
               <i class="fas fa-wallet"></i>
-              Total Assets
+              <span data-i18n="total_assets">Total Assets</span>
             </div>
             <div class="summary-card-value" id="total-assets">
               $2,317,371.20
@@ -551,7 +557,7 @@
           <div class="summary-card">
             <div class="summary-card-title">
               <i class="fas fa-chart-line"></i>
-              Total Profit/Loss
+              <span data-i18n="total_profit_loss">Total Profit/Loss</span>
             </div>
             <div class="summary-card-value positive" id="total-profit-loss">
               $63,253.45
@@ -561,7 +567,7 @@
           <div class="summary-card">
             <div class="summary-card-title">
               <i class="fas fa-sync"></i>
-              Daily Profit/Loss
+              <span data-i18n="daily_profit_loss">Daily Profit/Loss</span>
             </div>
             <div class="summary-card-value negative" id="daily-profit-loss">
               -$3,210.15
@@ -571,7 +577,7 @@
           <div class="summary-card">
             <div class="summary-card-title">
               <i class="fas fa-coins"></i>
-              Total Market Value
+              <span data-i18n="total_market_value">Total Market Value</span>
             </div>
             <div class="summary-card-value" id="total-market-value">
               $1,963,253.45
@@ -583,19 +589,19 @@
         <div class="data-section">
           <div class="cash-flow">
             <div class="flow-card income">
-              <div class="flow-title">Income</div>
+              <div class="flow-title" data-i18n="income">Income</div>
               <div class="flow-value positive" id="cash-flow-income">
                 $18,665
               </div>
-              <div class="flow-info">Last 30 Days</div>
+              <div class="flow-info" data-i18n="last_30_days">Last 30 Days</div>
             </div>
 
             <div class="flow-card spending">
-              <div class="flow-title">Spending</div>
+              <div class="flow-title" data-i18n="spending">Spending</div>
               <div class="flow-value negative" id="cash-flow-outcome">
                 $42,500
               </div>
-              <div class="flow-info">Last 30 Days</div>
+              <div class="flow-info" data-i18n="last_30_days">Last 30 Days</div>
             </div>
           </div>
         </div>
@@ -605,7 +611,9 @@
           <!-- 持仓分布图表 -->
           <div class="distribution-chart">
             <div class="data-section">
-              <div class="data-section-title">Position Distribution</div>
+              <div class="data-section-title" data-i18n="position_distribution">
+                Position Distribution
+              </div>
               <div class="chart-container">
                 <canvas id="positionDistributionChart"></canvas>
               </div>
@@ -617,7 +625,7 @@
             <div class="gainers-container">
               <div class="section-title">
                 <i class="fas fa-arrow-up positive"></i>
-                Top Gainers
+                <span data-i18n="top_gainers">Top Gainers</span>
               </div>
               <div class="gainers-list" id="gainers-list">
                 <!-- Generated by JS -->
@@ -627,7 +635,7 @@
             <div class="losers-container">
               <div class="section-title">
                 <i class="fas fa-arrow-down negative"></i>
-                Top Losers
+                <span data-i18n="top_losers">Top Losers</span>
               </div>
               <div class="losers-list" id="losers-list">
                 <!-- Generated by JS -->
@@ -638,17 +646,19 @@
           <!-- 持仓表格 -->
           <div class="positions-table-container">
             <div class="data-section">
-              <div class="data-section-title">Position Details</div>
+              <div class="data-section-title" data-i18n="position_details">
+                Position Details
+              </div>
               <table class="positions-table">
                 <thead>
                   <tr>
-                    <th>Stock</th>
-                    <th>Cost Price</th>
-                    <th>Current Price</th>
-                    <th>Quantity</th>
-                    <th>Daily Profit/Loss</th>
-                    <th>Position Ratio</th>
-                    <th>Position Value</th>
+                    <th data-i18n="stock">Stock</th>
+                    <th data-i18n="cost_price">Cost Price</th>
+                    <th data-i18n="current_price">Current Price</th>
+                    <th data-i18n="quantity">Quantity</th>
+                    <th data-i18n="daily_profit_loss">Daily Profit/Loss</th>
+                    <th data-i18n="position_ratio">Position Ratio</th>
+                    <th data-i18n="position_value">Position Value</th>
                   </tr>
                 </thead>
                 <tbody id="positions-table-body">
@@ -659,10 +669,6 @@
           </div>
         </div>
       </div>
-
-      <footer>
-        <p>© 2025 Financial Asset Management System | Last Data Update: 2025-07-28 15:30 EST</p>
-      </footer>
     </div>
 
     <script>
@@ -911,7 +917,6 @@
           item.innerHTML = `
                     <div class="position-info">
                         <div class="position-item-name">${position.stock_name}</div>
-                        <div class="position-item-ticker">ID: ${position.stock_id}</div>
                     </div>
                     <div class="position-item-change positive">+${positionProfitPercentage}%</div>
                 `
