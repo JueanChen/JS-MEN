@@ -9,6 +9,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="./i18n.js"></script>
     <style>
       * {
         margin: 0;
@@ -388,6 +389,38 @@
         background-color: rgba(59, 130, 246, 0.05);
       }
 
+      /* 保证交易表格中英文切换时列宽一致 */
+      .trades-table th,
+      .trades-table td {
+        min-width: 110px;
+        /* 可根据实际内容调整 */
+      }
+      .trades-table th:nth-child(1),
+      .trades-table td:nth-child(1) {
+        width: 150px;
+        min-width: 120px;
+      }
+      .trades-table th:nth-child(2),
+      .trades-table td:nth-child(2) {
+        width: 110px;
+      }
+      .trades-table th:nth-child(3),
+      .trades-table td:nth-child(3) {
+        width: 120px;
+      }
+      .trades-table th:nth-child(4),
+      .trades-table td:nth-child(4) {
+        width: 110px;
+      }
+      .trades-table th:nth-child(5),
+      .trades-table td:nth-child(5) {
+        width: 110px;
+      }
+      .trades-table th:nth-child(6),
+      .trades-table td:nth-child(6) {
+        width: 140px;
+      }
+
       .trade-actions {
         display: flex;
         gap: 8px;
@@ -496,15 +529,6 @@
         background-color: white;
       }
 
-      footer {
-        margin-top: 40px;
-        text-align: center;
-        padding: 20px 0;
-        color: var(--gray);
-        font-size: 14px;
-        border-top: 1px solid var(--border);
-      }
-
       @media (max-width: 1200px) {
         .dashboard-layout {
           grid-template-columns: 1fr;
@@ -547,21 +571,34 @@
       <header>
         <div class="logo">
           <i class="fas fa-chart-line"></i>
-          <h1>Financial Asset Management System</h1>
+          <h1 data-i18n="system_title">Financial Asset Management System</h1>
         </div>
-
-        <ul class="nav-tabs">
-          <li><a href="./positions.html">Asset Management</a></li>
-          <li><a href="#" class="active">Trade Management</a></li>
-          <li><a href="./stocks.html">Stock Trading</a></li>
-        </ul>
+        <div style="display: flex; align-items: center; gap: 20px">
+          <ul class="nav-tabs">
+            <li>
+              <a href="./positions.html" data-i18n="nav_asset">
+                Asset Management
+              </a>
+            </li>
+            <li>
+              <a href="#" class="active" data-i18n="nav_trade">
+                Trade Management
+              </a>
+            </li>
+            <li>
+              <a href="./stocks.html" data-i18n="nav_stock">Stock Trading</a>
+            </li>
+          </ul>
+          <button id="lang-toggle" style="margin-left: 20px; min-width: 60px">
+            中文
+          </button>
+        </div>
       </header>
 
       <!-- Trade Records Content -->
       <div class="panel">
-
         <div class="panel-header">
-          <h2 class="panel-title">Trade Records</h2>
+          <h2 class="panel-title" data-i18n="trade_records">trade_records</h2>
           <!-- Removed Add Trade button -->
         </div>
 
@@ -570,7 +607,7 @@
           <div class="summary-card">
             <div class="summary-card-title">
               <i class="fas fa-exchange-alt"></i>
-              Total Trades
+              <span data-i18n="total_trades">Total Trades</span>
             </div>
             <div class="summary-card-value" id="total-trades">142</div>
           </div>
@@ -578,7 +615,7 @@
           <div class="summary-card">
             <div class="summary-card-title">
               <i class="fas fa-money-bill-wave"></i>
-              Total Trade Amount
+              <span data-i18n="total_trade_amount">Total Trade Amount</span>
             </div>
             <div class="summary-card-value" id="total-trade-amount">
               $1,256,842.50
@@ -588,7 +625,7 @@
           <div class="summary-card">
             <div class="summary-card-title">
               <i class="fas fa-arrow-up"></i>
-              Buy Trades
+              <span data-i18n="buy_trades">Buy Trades</span>
             </div>
             <div class="summary-card-value" id="buy-trades">5</div>
           </div>
@@ -596,25 +633,26 @@
           <div class="summary-card">
             <div class="summary-card-title">
               <i class="fas fa-arrow-down"></i>
-              Sell Trades
+              <span data-i18n="sell_trades">Sell Trades</span>
             </div>
             <div class="summary-card-value" id="sell-trades">5</div>
-            </div>
           </div>
-        </div>  
+        </div>
 
         <!-- Trade Records Table -->
         <div class="data-section">
-          <div class="data-section-title">Trade Details</div>
+          <div class="data-section-title" data-i18n="trade_details">
+            Trade Details
+          </div>
           <table class="trades-table">
             <thead>
               <tr>
-                <th>Trade Time</th>
-                <th>Trade Type</th>
-                <th>Stock</th>
-                <th>Price</th>
-                <th>Quantity</th>
-                <th>Total Amount</th>
+                <th data-i18n="trade_time">Trade Time</th>
+                <th data-i18n="trade_type">Trade Type</th>
+                <th data-i18n="stock">Stock</th>
+                <th data-i18n="price">Price</th>
+                <th data-i18n="quantity">Quantity</th>
+                <th data-i18n="total_amount">Total Amount</th>
               </tr>
             </thead>
             <tbody id="trades-table-body">
@@ -623,116 +661,46 @@
           </table>
         </div>
       </div>
-
-      <footer>
-        <p>© 2025 Financial Asset Management System | Last Data Update: 2025-07-28 15:30 EST</p>
-      </footer>
     </div>
 
     <script>
       // 模拟交易数据 - 对应Trades表
-      const tradesData = [
+      let tradesData = [
         {
           id: 1,
           trade_time: '2025-07-28 14:30:25',
-          trade_type: 'buy',
-          stock_id: 101,
-          stock_name: 'Apple Inc.',
-          price: 197.5,
-          quantity: 50,
-          total_amount: 9875.0,
+          ticker: 'TXSL',
+          price: '120.00',
+          quantity: 60000,
+          total_amount: '720000.00',
         },
         {
           id: 2,
           trade_time: '2025-07-28 11:15:42',
-          trade_type: 'sell',
-          stock_id: 102,
-          stock_name: 'Microsoft Corp.',
-          price: 340.25,
-          quantity: 20,
-          total_amount: 6805.0,
+          ticker: 'AAPL',
+          price: '-120.00',
+          quantity: 60000,
+          total_amount: '-720000.00',
         },
         {
           id: 3,
           trade_time: '2025-07-27 15:45:18',
-          trade_type: 'buy',
-          stock_id: 103,
-          stock_name: 'Alphabet Inc. Class A',
-          price: 141.75,
-          quantity: 100,
-          total_amount: 14175.0,
-        },
-        {
-          id: 4,
-          trade_time: '2025-07-26 10:20:33',
-          trade_type: 'sell',
-          stock_id: 104,
-          stock_name: 'Amazon.com Inc.',
-          price: 180.25,
-          quantity: 30,
-          total_amount: 5407.5,
-        },
-        {
-          id: 5,
-          trade_time: '2025-07-25 13:05:57',
-          trade_type: 'buy',
-          stock_id: 105,
-          stock_name: 'Tesla Inc.',
-          price: 220.5,
-          quantity: 25,
-          total_amount: 5512.5,
-        },
-        {
-          id: 6,
-          trade_time: '2025-07-24 09:45:12',
-          trade_type: 'sell',
-          stock_id: 106,
-          stock_name: 'Berkshire Hathaway',
-          price: 415.8,
-          quantity: 15,
-          total_amount: 6237.0,
-        },
-        {
-          id: 7,
-          trade_time: '2025-07-23 16:20:18',
-          trade_type: 'buy',
-          stock_id: 107,
-          stock_name: 'NVIDIA Corp.',
-          price: 410.25,
-          quantity: 40,
-          total_amount: 16410.0,
-        },
-        {
-          id: 8,
-          trade_time: '2025-07-22 11:30:55',
-          trade_type: 'sell',
-          stock_id: 108,
-          stock_name: 'TSMC',
-          price: 100.5,
-          quantity: 100,
-          total_amount: 10050.0,
-        },
-        {
-          id: 9,
-          trade_time: '2025-07-21 14:15:33',
-          trade_type: 'buy',
-          stock_id: 109,
-          stock_name: 'JPMorgan Chase',
-          price: 150.75,
-          quantity: 75,
-          total_amount: 11306.25,
-        },
-        {
-          id: 10,
-          trade_time: '2025-07-20 10:05:47',
-          trade_type: 'sell',
-          stock_id: 110,
-          stock_name: 'UnitedHealth Group',
-          price: 490.2,
-          quantity: 25,
-          total_amount: 12255.0,
+          ticker: 'C',
+          price: '120.00',
+          quantity: 60000,
+          total_amount: '720000.00',
         },
       ]
+
+      // 根据price正负添加trade_type和stock_name
+      tradesData = tradesData.map((trade) => {
+        const priceNum = Number(trade.price)
+        return {
+          ...trade,
+          trade_type: priceNum >= 0 ? 'buy' : 'sell',
+          stock_name: trade.ticker,
+        }
+      })
 
       // 货币格式化函数
       function formatCurrency(value) {
@@ -760,34 +728,32 @@
       function renderTradesTable() {
         const tableBody = document.getElementById('trades-table-body')
         tableBody.innerHTML = ''
-
         tradesData.forEach((trade) => {
           const row = document.createElement('tr')
-
           row.innerHTML = `
-                    <td>${formatDateTime(trade.trade_time)}</td>
-                    <td>
-                        <span class="trade-type ${trade.trade_type}">
-                            ${trade.trade_type === 'buy' ? 'Buy' : 'Sell'}
-                        </span>
-                    </td>
-                    <td>
-                        <div class="trade-details">
-                            <div class="trade-stock">${trade.stock_name}</div>
-                            <div class="trade-ticker">ID: ${
-                              trade.stock_id
-                            }</div>
-                        </div>
-                    </td>
-                    <td>${formatCurrency(trade.price)}</td>
-                    <td>${trade.quantity}</td>
-                    <td class="trade-amount">${formatCurrency(
-                      trade.total_amount
-                    )}</td>
-                `
-
+            <td>${formatDateTime(trade.trade_time)}</td>
+            <td>
+              <span class="trade-type ${trade.trade_type}" data-i18n="${
+            trade.trade_type
+          }">${trade.trade_type}</span>
+            </td>
+            <td>
+              <div class="trade-details">
+                <div class="trade-stock">${trade.stock_name}</div>
+              </div>
+            </td>
+            <td>${formatCurrency(Math.abs(Number(trade.price)))}</td>
+            <td>${trade.quantity}</td>
+            <td class="trade-amount">${formatCurrency(
+              Math.abs(Number(trade.total_amount))
+            )}</td>
+          `
           tableBody.appendChild(row)
         })
+        // 渲染后刷新 i18n
+        if (typeof setLanguage === 'function') {
+          setLanguage(localStorage.getItem('lang') || 'en')
+        }
       }
 
       // 更新概览卡片
@@ -797,7 +763,7 @@
 
         // 总交易金额
         const totalAmount = tradesData.reduce(
-          (sum, trade) => sum + trade.total_amount,
+          (sum, trade) => Number(sum) + Math.abs(Number(trade.total_amount)),
           0
         )
         document.getElementById('total-trade-amount').textContent =
@@ -823,85 +789,6 @@
         // 更新概览卡片
         updateSummaryCards()
         // Removed event listeners for add-trade-btn and modal
-      })
-    </script>
-  </body>
-</html>
-        })
-      }
-
-      // 更新概览卡片
-      function updateSummaryCards() {
-        // 总交易次数
-        document.getElementById('total-trades').textContent = tradesData.length
-
-        // 总交易金额
-        const totalAmount = tradesData.reduce(
-          (sum, trade) => sum + trade.total_amount,
-          0
-        )
-        document.getElementById('total-trade-amount').textContent =
-          formatCurrency(totalAmount)
-
-        // 买入交易次数
-        const buyTrades = tradesData.filter(
-          (trade) => trade.trade_type === 'buy'
-        ).length
-        document.getElementById('buy-trades').textContent = buyTrades
-
-        // 卖出交易次数
-        const sellTrades = tradesData.filter(
-          (trade) => trade.trade_type === 'sell'
-        ).length
-        document.getElementById('sell-trades').textContent = sellTrades
-      }
-
-      // 初始化页面
-      document.addEventListener('DOMContentLoaded', function () {
-        // 渲染交易表格
-        renderTradesTable()
-        // 更新概览卡片
-        updateSummaryCards()
-
-        // 打开添加交易模态框
-        document.getElementById('add-trade-btn').addEventListener('click', function () {
-          document.getElementById('add-trade-modal').style.display = 'flex'
-        })
-        // 关闭模态框
-        document.querySelector('.close-modal').addEventListener('click', function () {
-          document.getElementById('add-trade-modal').style.display = 'none'
-        })
-        // 表单提交事件
-        document.getElementById('trade-form').addEventListener('submit', function (e) {
-          e.preventDefault()
-          // 获取表单数据
-          const tradeType = document.getElementById('trade-type').value
-          const stockId = document.getElementById('stock-id').value
-          const stockName = document.getElementById('stock-name').value
-          const price = parseFloat(document.getElementById('trade-price').value)
-          const quantity = parseInt(document.getElementById('trade-quantity').value)
-          const tradeTime = document.getElementById('trade-time').value
-          // 创建新交易对象
-          const newTrade = {
-            id: tradesData.length + 1,
-            trade_time: tradeTime.replace('T', ' ') + ':00',
-            trade_type: tradeType,
-            stock_id: stockId,
-            stock_name: stockName,
-            price: price,
-            quantity: quantity,
-            total_amount: price * quantity,
-          }
-          // 添加到交易数据
-          tradesData.push(newTrade)
-          // 重新渲染页面
-          renderTradesTable()
-          updateSummaryCards()
-          // 关闭模态框并重置表单
-          document.getElementById('add-trade-modal').style.display = 'none'
-          document.getElementById('trade-form').reset()
-          alert('Trade record added successfully!')
-        })
       })
     </script>
   </body>
