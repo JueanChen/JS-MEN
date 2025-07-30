@@ -3,18 +3,18 @@ import pandas as pd
 from sqlalchemy import create_engine, DECIMAL
 
 # Define the stock tickers and download parameters
-tickers = ['GOOG', 'MSFT', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC']
-period = '30d'
-interval = '5m'
+tickers = ['AAPL', 'GOOG', 'MSFT', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC']
+period = '5d'
+interval = '1mo'
 db_file = 'stock_data.db'
 
 for ticker in tickers:
-    table_name = ticker
+    table_name = ticker + '_MK'
     print(f"Downloading data for {ticker}")
 
     # Download the data for all tickers
     try:
-        data = yf.download(tickers=ticker, period=period, interval=interval)
+        data = yf.download(tickers=ticker, start="2009-12-29", end="2025-07-29", interval=interval)
         
         if data.empty:
             print("No data downloaded. Check ticker symbols or connection.")
@@ -27,7 +27,7 @@ for ticker in tickers:
             # --- 2. Column Renaming and Formatting ---
             # Define a mapping for renaming columns
             column_rename_map = {
-                'Datetime': 'time_stamp',
+                'Date': 'time_stamp',
                 'Open': 'open_price',
                 'High': 'high_price',
                 'Low': 'low_price',
@@ -37,7 +37,7 @@ for ticker in tickers:
             consolidated_df.rename(columns=column_rename_map, inplace=True)
             
             # Format the time_stamp column to 'YYYY-MM-DD HH:MM:SS' string format
-            consolidated_df['time_stamp'] = consolidated_df['time_stamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
+            consolidated_df['time_stamp'] = consolidated_df['time_stamp'].dt.strftime('%Y-%m-%d')
 
             # Select only the columns we need, dropping 'Adj Close'
             final_df = consolidated_df[['time_stamp', 'open_price', 'high_price', 'low_price', 'close_price', 'volume']]
