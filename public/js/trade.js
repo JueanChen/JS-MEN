@@ -30,7 +30,19 @@ db.connect((err) => {
 });
 
 // 创建HTTP服务器并配置请求处理
+// 在创建服务器后添加通用 CORS 头
 const server = http.createServer(async (req, res) => {
+    // 设置 CORS 头（关键修复）
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    // 处理预检请求
+    if (req.method === 'OPTIONS') {
+        res.writeHead(204);
+        res.end();
+        return;
+    }
     // 交易数据提交接口
     if (req.method === 'POST' && req.url === '/trades') {
         try {
@@ -174,7 +186,7 @@ async function forwardData2StockService(data) {
         // 配置股票服务地址（根据实际服务地址修改）
         const options = {
             hostname: process.env.DB_HOST,
-            port: 3000,
+            port: 3002,
             path: '/stocks/positions',
             method: 'POST',
             headers: {
@@ -245,6 +257,7 @@ async function getTradesFromDB() {
     });
 }
 
+//ee
 
 
 

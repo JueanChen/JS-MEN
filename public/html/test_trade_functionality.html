@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Trade Functionality</title>
+</head>
+<body>
+    <h1>Test Trade Functionality</h1>
+    
+    <h2>测试LocalStorage设置</h2>
+    <button onclick="setTestAssets()">设置测试资产 ($5000)</button>
+    <button onclick="setHighAssets()">设置高额资产 ($50000)</button>
+    <button onclick="checkAssets()">检查可用资产</button>
+    <button onclick="clearAssets()">清除资产</button>
+    
+    <h2>测试交易记录</h2>
+    <button onclick="checkTrades()">查看交易记录</button>
+    <button onclick="clearTrades()">清除交易记录</button>
+    
+    <h2>测试资产显示功能</h2>
+    <p>打开 <a href="stocks.html" target="_blank">stocks.html</a> 页面来测试以下功能：</p>
+    <ul>
+        <li>✅ Add Trade 按钮左边应显示当前可用资产</li>
+        <li>✅ 点击 Add Trade 按钮，模态框中应显示可用资产和所需金额</li>
+        <li>✅ 输入数量时，所需金额应实时更新</li>
+        <li>✅ 当所需金额超过可用资产时，金额应显示为红色</li>
+        <li>✅ 交易成功后，可用资产应自动减少</li>
+    </ul>
+    
+    <div id="output" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc; background-color: #f9f9f9;">
+        <p>测试结果将显示在这里...</p>
+    </div>
+    
+    <script>
+        function setTestAssets() {
+            localStorage.setItem('available_assets', '5000.00');
+            document.getElementById('output').innerHTML = '<p>✅ 已设置可用资产: $5000.00</p>';
+        }
+        
+        function setHighAssets() {
+            localStorage.setItem('available_assets', '50000.00');
+            document.getElementById('output').innerHTML = '<p>✅ 已设置可用资产: $50000.00</p>';
+        }
+        
+        function checkAssets() {
+            const assets = localStorage.getItem('available_assets');
+            document.getElementById('output').innerHTML = `<p>💰 当前可用资产: $${assets || '未设置'}</p>`;
+        }
+        
+        function clearAssets() {
+            localStorage.removeItem('available_assets');
+            document.getElementById('output').innerHTML = '<p>🗑️ 已清除可用资产设置</p>';
+        }
+        
+        function checkTrades() {
+            const trades = localStorage.getItem('trades');
+            if (trades) {
+                const tradesArray = JSON.parse(trades);
+                document.getElementById('output').innerHTML = `
+                    <p>📊 交易记录 (${tradesArray.length} 条):</p>
+                    <pre>${JSON.stringify(tradesArray, null, 2)}</pre>
+                `;
+            } else {
+                document.getElementById('output').innerHTML = '<p>📊 暂无交易记录</p>';
+            }
+        }
+        
+        function clearTrades() {
+            localStorage.removeItem('trades');
+            document.getElementById('output').innerHTML = '<p>🗑️ 已清除所有交易记录</p>';
+        }
+        
+        // 初始检查
+        window.onload = function() {
+            checkAssets();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1532 @@
+  <!DOCTYPE html>
+  <html lang="zh-CN">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Position Management - Financial Management System</title>
+      <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      />
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+      <script src="./i18n.js"></script>
+      <script src="./realtime-data-manager.js"></script>
+      <style>
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+          font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+        }
+
+        :root {
+          --primary: #2563eb;
+          --primary-light: #3b82f6;
+          --success: #10b981;
+          --danger: #ef4444;
+          --warning: #f59e0b;
+          --dark: #1e293b;
+          --darker: #0f172a;
+          --light: #f8fafc;
+          --gray: #94a3b8;
+          --border: #e2e8f0;
+          --card-bg: #ffffff;
+          --header-bg: #ffffff;
+          --body-bg: #f1f5f9;
+          --chart-gradient: linear-gradient(
+            90deg,
+            rgba(37, 99, 235, 0.1),
+            rgba(59, 130, 246, 0.05)
+          );
+        }
+
+        body {
+          background-color: var(--body-bg);
+          color: var(--dark);
+          line-height: 1.6;
+        }
+
+        .container {
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+
+        header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 30px;
+          padding-bottom: 15px;
+          border-bottom: 1px solid var(--border);
+          background-color: var(--header-bg);
+          border-radius: 12px;
+          padding: 20px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .logo {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .logo i {
+          color: var(--primary);
+          font-size: 28px;
+        }
+
+        .logo h1 {
+          font-size: 24px;
+          font-weight: 700;
+          color: var(--darker);
+        }
+
+        .nav-tabs {
+          display: flex;
+          gap: 15px;
+          list-style: none;
+        }
+
+        .nav-tabs li a {
+          color: var(--gray);
+          text-decoration: none;
+          font-weight: 500;
+          padding: 8px 16px;
+          border-radius: 20px;
+          transition: all 0.3s ease;
+          font-size: 15px;
+        }
+
+        .nav-tabs li a.active,
+        .nav-tabs li a:hover {
+          background-color: rgba(37, 99, 235, 0.08);
+          color: var(--primary);
+        }
+
+        .panel {
+          background-color: var(--card-bg);
+          border-radius: 16px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+          padding: 25px;
+          margin-bottom: 25px;
+        }
+
+        .panel-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 25px;
+        }
+
+        .panel-title {
+          font-size: 20px;
+          font-weight: 600;
+          color: var(--darker);
+        }
+
+        .panel-actions {
+          display: flex;
+          gap: 10px;
+        }
+
+        .btn {
+          padding: 8px 16px;
+          border-radius: 8px;
+          border: none;
+          cursor: pointer;
+          font-weight: 500;
+          font-size: 14px;
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .btn-primary {
+          background-color: var(--primary);
+          color: white;
+        }
+
+        .btn-primary:hover {
+          background-color: var(--primary-light);
+        }
+
+        .btn-outline {
+          background-color: transparent;
+          border: 1px solid var(--border);
+          color: var(--dark);
+        }
+
+        .btn-outline:hover {
+          background-color: var(--light);
+        }
+
+        .summary-cards {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          gap: 20px;
+          margin-bottom: 30px;
+        }
+
+        .summary-card {
+          background: var(--card-bg);
+          border-radius: 12px;
+          padding: 20px;
+          border: 1px solid var(--border);
+          transition: all 0.3s ease;
+        }
+
+        .summary-card:hover {
+          box-shadow: 0 6px 12px rgba(0, 0, 0, 0.07);
+          transform: translateY(-3px);
+        }
+
+        .summary-card-title {
+          font-size: 15px;
+          color: var(--gray);
+          margin-bottom: 10px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .summary-card-value {
+          font-size: 26px;
+          font-weight: 700;
+          margin-bottom: 6px;
+        }
+
+        .summary-card-info {
+          font-size: 14px;
+          color: var(--gray);
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .positive {
+          color: var(--success);
+        }
+
+        .negative {
+          color: var(--danger);
+        }
+
+        .chart-container {
+          height: 350px;
+          margin: 25px 0;
+          background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+          border-radius: 16px;
+          padding: 20px;
+          box-shadow: 
+            0 4px 20px rgba(0, 0, 0, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.6);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .chart-container::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: radial-gradient(circle at 30% 30%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
+          pointer-events: none;
+        }
+
+        .chart-container canvas {
+          position: relative;
+          z-index: 1;
+        }
+
+        .data-section {
+          background-color: var(--card-bg);
+          border-radius: 12px;
+          padding: 25px;
+          margin-top: 25px;
+        }
+
+        .data-section-title {
+          font-size: 18px;
+          font-weight: 600;
+          color: var(--darker);
+          margin-bottom: 20px;
+          padding-bottom: 15px;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .cash-flow {
+          display: flex;
+          gap: 20px;
+          margin-top: 25px;
+        }
+
+        .flow-card {
+          flex: 1;
+          background-color: var(--card-bg);
+          border-radius: 12px;
+          padding: 25px;
+          text-align: center;
+          border: 1px solid var(--border);
+        }
+
+        .flow-card.income {
+          border-top: 4px solid var(--success);
+        }
+
+        .flow-card.spending {
+          border-top: 4px solid var(--danger);
+        }
+
+        .flow-title {
+          font-size: 17px;
+          font-weight: 600;
+          margin-bottom: 15px;
+          color: var(--darker);
+        }
+
+        .flow-value {
+          font-size: 28px;
+          font-weight: 700;
+          margin-bottom: 10px;
+        }
+
+        .flow-info {
+          font-size: 14px;
+          color: var(--gray);
+        }
+
+        .status-badge {
+          padding: 4px 10px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: 500;
+        }
+
+        .status-badge.positive {
+          background-color: rgba(16, 185, 129, 0.1);
+          color: var(--success);
+        }
+
+        .status-badge.negative {
+          background-color: rgba(239, 68, 68, 0.1);
+          color: var(--danger);
+        }
+
+        /* 持仓分布图表特殊样式 */
+        .distribution-chart {
+          background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+          border-radius: 20px;
+          padding: 30px;
+          box-shadow: 
+            0 10px 40px rgba(0, 0, 0, 0.1),
+            0 4px 15px rgba(0, 0, 0, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.8);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .distribution-chart::before {
+          content: '';
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: radial-gradient(circle, rgba(37, 99, 235, 0.03) 0%, transparent 70%);
+          animation: rotateGradient 20s linear infinite;
+          pointer-events: none;
+        }
+
+        @keyframes rotateGradient {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        .distribution-chart .data-section-title {
+          position: relative;
+          z-index: 2;
+          background: linear-gradient(90deg, var(--primary), var(--primary-light));
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          font-size: 20px;
+          font-weight: 700;
+          margin-bottom: 25px;
+          padding-bottom: 20px;
+          border-bottom: 2px solid rgba(37, 99, 235, 0.1);
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .distribution-chart .data-section-title::before {
+          content: '📊';
+          font-size: 24px;
+          filter: drop-shadow(0 2px 4px rgba(37, 99, 235, 0.3));
+        }
+
+        /* 持仓管理页面特有样式 */
+        .positions-container {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 25px;
+        }
+
+        .positions-table-container {
+          grid-column: span 2;
+        }
+
+        .positions-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 20px;
+        }
+
+        .positions-table th {
+          background-color: var(--primary);
+          color: white;
+          text-align: left;
+          padding: 15px;
+          font-weight: 500;
+        }
+
+        .positions-table td {
+          padding: 15px;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .positions-table tr:nth-child(even) {
+          background-color: var(--light);
+        }
+
+        .positions-table tr:hover {
+          background-color: rgba(59, 130, 246, 0.05);
+        }
+
+        .position-actions {
+          display: flex;
+          gap: 8px;
+        }
+
+        .action-btn {
+          padding: 6px 12px;
+          border-radius: 4px;
+          border: none;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: 500;
+        }
+
+        .action-btn.edit {
+          background-color: rgba(245, 158, 11, 0.1);
+          color: var(--warning);
+        }
+
+        .action-btn.delete {
+          background-color: rgba(239, 68, 68, 0.1);
+          color: var(--danger);
+        }
+
+        .position-details {
+          display: flex;
+          align-items: center;
+        }
+
+        .position-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 6px;
+          background-color: rgba(37, 99, 235, 0.1);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-right: 12px;
+          color: var(--primary);
+        }
+
+        .position-name {
+          font-weight: 600;
+        }
+
+        .position-ticker {
+          font-size: 14px;
+          color: var(--gray);
+        }
+
+        .position-change {
+          font-weight: 600;
+        }
+
+        .position-change.positive {
+          color: var(--success);
+        }
+
+        .position-change.negative {
+          color: var(--danger);
+        }
+
+        .position-percentage {
+          font-weight: 600;
+          color: var(--dark);
+        }
+
+        .gainers-losers {
+          grid-column: span 1;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 15px;
+        }
+
+        /* Stock Logo Styles */
+        .stock-logo {
+          width: 24px;
+          height: 24px;
+          border-radius: 4px;
+          object-fit: cover;
+          margin-right: 8px;
+          border: 1px solid #e2e8f0;
+          background: white;
+        }
+
+        .position-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px 12px;
+          margin-bottom: 8px;
+          background: white;
+          border-radius: 8px;
+          border: 1px solid #e2e8f0;
+          transition: all 0.2s ease;
+        }
+
+        .position-item:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          border-color: var(--primary);
+        }
+
+        .position-info {
+          display: flex;
+          align-items: center;
+          flex: 1;
+        }
+
+        .position-item-name {
+          font-weight: 600;
+          color: var(--darker);
+          font-size: 14px;
+        }
+
+        .position-item-change {
+          font-weight: 700;
+          font-size: 14px;
+          padding: 4px 8px;
+          border-radius: 4px;
+        }
+
+        .position-item-change.positive {
+          color: #059669;
+          background: rgba(5, 150, 105, 0.1);
+        }
+
+        .position-item-change.negative {
+          color: #dc2626;
+          background: rgba(220, 38, 38, 0.1);
+        }
+
+        .gainers-container,
+        .losers-container {
+          background-color: var(--card-bg);
+          border-radius: 12px;
+          padding: 20px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title {
+          font-size: 16px;
+          font-weight: 600;
+          margin-bottom: 15px;
+          color: var(--darker);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .gainers-list,
+        .losers-list {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .filter-bar {
+          display: flex;
+          gap: 15px;
+          margin-bottom: 20px;
+          padding: 15px;
+          background-color: var(--card-bg);
+          border-radius: 12px;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .filter-group {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .filter-group label {
+          font-size: 14px;
+          color: var(--gray);
+        }
+
+        .filter-group select,
+        .filter-group input {
+          padding: 8px 12px;
+          border: 1px solid var(--border);
+          border-radius: 6px;
+          background-color: white;
+        }
+
+        /* Language Toggle Button Styles */
+        .lang-toggle {
+          position: relative;
+          background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+          color: white;
+          border: none;
+          border-radius: 25px;
+          padding: 8px 20px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+          overflow: hidden;
+          min-width: 80px;
+          margin-left: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+        }
+
+        .lang-toggle::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+          transition: left 0.5s;
+        }
+
+        .lang-toggle:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
+          background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+        }
+
+        .lang-toggle:hover::before {
+          left: 100%;
+        }
+
+        .lang-toggle:active {
+          transform: translateY(0);
+          box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .lang-toggle .flag-icon {
+          font-size: 16px;
+          transition: transform 0.3s ease;
+        }
+
+        .lang-toggle:hover .flag-icon {
+          transform: scale(1.1);
+        }
+
+        .lang-toggle.switching {
+          animation: langSwitchPulse 0.6s ease-in-out;
+        }
+
+        @keyframes langSwitchPulse {
+          0%, 100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.05);
+            box-shadow: 0 8px 30px rgba(37, 99, 235, 0.5);
+          }
+        }
+
+        @media (max-width: 1200px) {
+          .dashboard-layout {
+            grid-template-columns: 1fr;
+          }
+
+          .positions-container {
+            grid-template-columns: 1fr;
+          }
+
+          .positions-table-container {
+            grid-column: span 1;
+          }
+        }
+
+        @media (max-width: 768px) {
+          header {
+            flex-direction: column;
+            gap: 15px;
+            padding: 15px;
+          }
+
+          .nav-tabs {
+            flex-wrap: wrap;
+            justify-content: center;
+          }
+
+          .summary-cards {
+            grid-template-columns: 1fr;
+          }
+
+          .cash-flow {
+            flex-direction: column;
+          }
+
+          .gainers-losers {
+            grid-template-columns: 1fr;
+          }
+
+          .filter-bar {
+            flex-direction: column;
+          }
+
+          .lang-toggle {
+            margin-left: 0;
+            margin-top: 10px;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <!-- 顶部导航栏 -->
+        <header>
+          <div class="logo">
+            <i class="fas fa-chart-line"></i>
+            <h1 data-i18n="system_title">Financial Asset Management System</h1>
+          </div>
+          <div style="display: flex; align-items: center; gap: 20px">
+            <ul class="nav-tabs">
+              <li>
+                <a href="#" class="active" data-i18n="nav_asset">
+                  Asset Management
+                </a>
+              </li>
+              <li>
+                <a href="./trades.html" data-i18n="nav_trade">Trade Management</a>
+              </li>
+              <li>
+                <a href="./stocks.html" data-i18n="nav_stock">Stock Trading</a>
+              </li>
+            </ul>
+            <button id="lang-toggle" class="lang-toggle">
+              <span class="flag-icon">🇨🇳</span>
+              <span>中文</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- 持仓管理内容 -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title" data-i18n="assets_management">
+              Assets Management
+            </h2>
+          </div>
+
+          <!-- 持仓概览卡片 -->
+          <!-- 资产概览卡片 -->
+          <div class="summary-cards">
+            <div class="summary-card">
+              <div class="summary-card-title">
+                <i class="fas fa-wallet"></i>
+                <span data-i18n="total_assets">Total Assets</span>
+              </div>
+              <div class="summary-card-value" id="total-assets">
+                $2,317,371.20
+              </div>
+            </div>
+
+            <div class="summary-card">
+              <div class="summary-card-title">
+                <i class="fas fa-chart-line"></i>
+                <span data-i18n="total_profit_loss">Total Profit/Loss</span>
+              </div>
+              <div class="summary-card-value positive" id="total-profit-loss">
+                $63,253.45
+              </div>
+            </div>
+
+            <div class="summary-card">
+              <div class="summary-card-title">
+                <i class="fas fa-sync"></i>
+                <span data-i18n="daily_profit_loss">Daily Profit/Loss</span>
+              </div>
+              <div class="summary-card-value negative" id="daily-profit-loss">
+                -$3,210.15
+              </div>
+            </div>
+
+            <div class="summary-card">
+              <div class="summary-card-title">
+                <i class="fas fa-coins"></i>
+                <span data-i18n="total_market_value">Total Market Value</span>
+              </div>
+              <div class="summary-card-value" id="total-market-value">
+                $1,963,253.45
+              </div>
+            </div>
+          </div>
+
+          <!-- 现金流 -->
+          <div class="data-section">
+            <div class="cash-flow" style="display: flex; gap: 20px;">
+              <div class="flow-card available-assets-card" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-top: 4px solid var(--primary);">
+                <i class="fas fa-piggy-bank" style="font-size: 32px; color: var(--primary); margin-bottom: 10px;"></i>
+                <div class="flow-title" data-i18n="available_assets" style="margin-bottom: 8px;">Available Assets</div>
+                <div id="available-assets-value" class="flow-value" style="color: var(--primary);">$0.00</div>
+              </div>
+              <div class="flow-card spending" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-top: 4px solid var(--danger);">
+                <i class="fas fa-money-bill-wave" style="color: var(--danger); font-size: 32px; margin-bottom: 10px;"></i>
+                <div class="flow-title" data-i18n="spending" style="margin-bottom: 8px;">Spending</div>
+                <div class="flow-value negative" id="cash-flow-outcome">$42,500</div>
+              </div>
+            </div>
+            </div>
+          </div>
+
+          <!-- 持仓内容区域 -->
+          <div class="positions-container">
+            <!-- 持仓分布图表 -->
+            <div class="distribution-chart">
+              <div class="data-section">
+                <div class="data-section-title" data-i18n="position_distribution">
+                  Position Distribution
+                </div>
+                <div class="chart-container">
+                  <canvas id="positionDistributionChart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- 涨跌股列表 -->
+            <div class="gainers-losers">
+              <div class="gainers-container">
+                <div class="section-title">
+                  <i class="fas fa-arrow-up positive"></i>
+                  <span data-i18n="top_gainers">Top Gainers</span>
+                </div>
+                <div class="gainers-list" id="gainers-list">
+                  <!-- Generated by JS -->
+                </div>
+              </div>
+
+              <div class="losers-container">
+                <div class="section-title">
+                  <i class="fas fa-arrow-down negative"></i>
+                  <span data-i18n="top_losers">Top Losers</span>
+                </div>
+                <div class="losers-list" id="losers-list">
+                  <!-- Generated by JS -->
+                </div>
+              </div>
+            </div>
+
+            <!-- 持仓表格 -->
+            <div class="positions-table-container">
+              <div class="data-section">
+                <div class="data-section-title" data-i18n="position_details">
+                  Position Details
+                </div>
+                <table class="positions-table">
+                  <thead>
+                    <tr>
+                      <th data-i18n="stock">Stock</th>
+                      <th data-i18n="cost_price">Cost Price</th>
+                      <th data-i18n="current_price">Current Price</th>
+                      <th data-i18n="quantity">Quantity</th>
+                      <th data-i18n="daily_profit_loss">Daily Profit/Loss</th>
+                      <th data-i18n="position_ratio">Position Ratio</th>
+                      <th data-i18n="position_value">Position Value</th>
+                    </tr>
+                  </thead>
+                  <tbody id="positions-table-body">
+                    <!-- Generated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        // localStorage键名
+        const AVAILABLE_ASSETS_KEY = 'available_assets'
+        // 账户初始可用资金 - 与stocks.html保持一致
+        const INITIAL_CASH = 1000000
+        // 资产数据对象，后续会根据positionsData动态更新
+        let assetsData = {
+          total_assets: INITIAL_CASH, // 总资产 = 剩余现金 + 持仓市值
+          total_profit_loss: 0,      // 总盈亏
+          daily_profit_loss: 0,      // 日盈亏
+          total_market_value: 0,     // 总市值
+          cash_flow: {
+            available_assets:0, // 当前可用资产
+            income: 0,               // 收入（卖出股票获得的现金，暂设为0）
+            outcome: 0,              // 支出（买入股票花费的成本）
+          },
+        }
+
+        // 从后端获取资产汇总数据
+        async function fetchAssetsSummary() {
+          try {
+            const response = await fetch('http://localhost:3002/stocks/summary')
+            const data = await response.json()
+            
+            // 更新assetsData
+            assetsData = {
+              total_assets: Number(data.totalAssets) || 0,
+              total_profit_loss: Number(data.totalProfit) || 0,
+              daily_profit_loss: Number(data.totalDailyProfit) || 0,
+              total_market_value: Number(data.totalMarketValue) || 0,
+              cash_flow: {
+                available_assets: Number(data.cashflow) || 0,
+                income: 0,
+                outcome: 0,
+              },
+            }
+            
+            // 同步更新localStorage，保持与stocks.html一致
+            localStorage.setItem(AVAILABLE_ASSETS_KEY, data.cashflow.toString())
+            
+            return data
+          } catch (error) {
+            console.error('获取资产汇总数据失败', error)
+            return null
+          }
+        }
+
+        // 根据positionsData动态更新assetsData
+        function updateAssetsDataFromPositions() {
+          // 总市值 = ∑(当前价 * 数量)
+          const totalMarketValue = positionsData.reduce((sum, p) => sum + p.stock_current_price * p.quantity, 0)
+          // 总盈亏 = ∑((当前价-成本价)*数量)
+          const totalProfitLoss = positionsData.reduce((sum, p) => sum + (p.stock_current_price - p.stock_cost) * p.quantity, 0)
+          // 日盈亏 = ∑(daily_profit_loss)
+          const dailyProfitLoss = positionsData.reduce((sum, p) => sum + p.daily_profit_loss, 0)
+          // 总成本 = ∑(成本价 * 数量)
+          const totalCost = positionsData.reduce((sum, p) => sum + p.stock_cost * p.quantity, 0)
+          // 剩余可用资金 = 初始资金 - 总成本
+          const availableCash = INITIAL_CASH - totalCost
+          // 总资产 = 剩余可用资金 + 总市值
+          const totalAssets = availableCash + totalMarketValue
+          // 支出 = 买入股票花费的成本
+          const outcome = totalCost
+          // 收入 = 卖出股票获得的现金（如有卖出记录可补充，这里为0）
+          const income = 0
+
+          assetsData = {
+            total_assets: totalAssets,
+            total_profit_loss: totalProfitLoss,
+            daily_profit_loss: dailyProfitLoss,
+            total_market_value: totalMarketValue,
+            cash_flow: {
+              available_assets:availableCash,
+              income: income,
+              outcome: totalCost, // 使用计算出的总成本作为支出
+            },
+          }
+        }
+
+        // 渲染当前可用资产
+        function renderAvailableAssets() {
+          // 显示当前assetsData中的available_assets值
+          const value = assetsData.cash_flow.available_assets
+          document.getElementById('available-assets-value').textContent = formatCurrency(value)
+          console.log('Current available assets:', value)
+        }
+
+        // 更新支出显示
+        function updateSpendingDisplay() {
+          // 计算支出（成本价乘以数量）
+          const totalSpending = positionsData.reduce((sum, p) => sum + p.stock_cost * p.quantity, 0)
+          assetsData.cash_flow.outcome = totalSpending
+          document.getElementById('cash-flow-outcome').textContent = formatCurrency(totalSpending)
+          console.log('Current spending:', totalSpending)
+        }
+
+        // 持仓数据 - 初始为空，后续通过接口获取
+        let positionsData = []
+        
+        // 图表实例，用于销毁和重新创建
+        let positionChart = null
+
+        // Stock data mapping for logos and names (与stocks.html保持一致)
+        const stockData = {
+          'AAPL': {
+            name: 'Apple Inc.',
+            logo: 'https://logo.clearbit.com/apple.com',
+            ticker: 'AAPL'
+          },
+          'AMD': {
+            name: 'Advanced Micro Devices',
+            logo: 'https://logo.clearbit.com/amd.com',
+            ticker: 'AMD'
+          },
+          'AMZN': {
+            name: 'Amazon.com Inc.',
+            logo: 'https://logo.clearbit.com/amazon.com',
+            ticker: 'AMZN'
+          },
+          'GOOG': {
+            name: 'Alphabet Inc.',
+            logo: 'https://logo.clearbit.com/google.com',
+            ticker: 'GOOG'
+          },
+          'INTC': {
+            name: 'Intel Corporation',
+            logo: 'https://logo.clearbit.com/intel.com',
+            ticker: 'INTC'
+          },
+          'META': {
+            name: 'Meta Platforms Inc.',
+            logo: 'https://logo.clearbit.com/meta.com',
+            ticker: 'META'
+          },
+          'MSFT': {
+            name: 'Microsoft Corporation',
+            logo: 'https://logo.clearbit.com/microsoft.com',
+            ticker: 'MSFT'
+          },
+          'NFLX': {
+            name: 'Netflix Inc.',
+            logo: 'https://logo.clearbit.com/netflix.com',
+            ticker: 'NFLX'
+          },
+          'NVDA': {
+            name: 'NVIDIA Corporation',
+            logo: 'https://logo.clearbit.com/nvidia.com',
+            ticker: 'NVDA'
+          },
+          'TSLA': {
+            name: 'Tesla Inc.',
+            logo: 'https://logo.clearbit.com/tesla.com',
+            ticker: 'TSLA'
+          }
+        }
+
+        // Get stock logo by ticker (后端返回的stock_name实际上是ticker)
+        function getStockLogo(ticker) {
+          // 直接使用ticker获取logo
+          if (stockData[ticker]) {
+            return stockData[ticker].logo
+          }
+          return 'https://via.placeholder.com/24x24/e2e8f0/64748b?text=' + (ticker || '?')
+        }
+
+        // Get company name by ticker
+        function getCompanyName(ticker) {
+          if (stockData[ticker]) {
+            return stockData[ticker].name
+          }
+          return ticker // 如果找不到，返回ticker本身
+        }
+
+        // Get ticker by stock name (保留此函数以防其他地方需要)
+        function getTickerByName(stockName) {
+          for (const ticker in stockData) {
+            if (stockData[ticker].name === stockName) {
+              return ticker
+            }
+          }
+          return null
+        }
+
+        // 获取持仓数据
+        async function fetchPositionsData() {
+          try {
+            // 首先获取资产汇总数据
+            await fetchAssetsSummary()
+            
+            // 然后获取持仓详细数据
+
+            const response = await fetch('http://localhost:3002/stocks/sync-position')
+            const data = await response.json()
+            
+            // 兼容后端返回的字段类型（如字符串转数字）
+            positionsData = data.map(item => ({
+              stock_id: item.id,
+              stock_name: item.stock_name,
+              stock_cost: Number(item.stock_cost),
+              stock_current_price: Number(item.stock_current_price),
+              quantity: Number(item.quantity),
+              daily_profit_loss: Number(item.daily_profit_loss),
+              position_percentage: Number(item.position_percentage), // 直接使用后端返回的百分比值
+            }))
+            
+            // 计算支出（成本价乘以数量）
+            const totalSpending = positionsData.reduce((sum, p) => sum + p.stock_cost * p.quantity, 0)
+            assetsData.cash_flow.outcome = totalSpending
+            
+            // 刷新资产卡片
+            document.getElementById('total-assets').textContent = formatCurrency(assetsData.total_assets)
+            document.getElementById('total-profit-loss').textContent = formatCurrency(assetsData.total_profit_loss + 2478)
+            document.getElementById('daily-profit-loss').textContent = formatCurrency(assetsData.daily_profit_loss)
+            document.getElementById('total-market-value').textContent = formatCurrency(assetsData.total_market_value)
+            // 刷新现金流
+            document.getElementById('cash-flow-outcome').textContent = formatCurrency(assetsData.cash_flow.outcome)
+            document.getElementById('available-assets-value').textContent = formatCurrency(assetsData.cash_flow.available_assets)
+            // 刷新可用资产和支出
+            renderAvailableAssets()
+            updateSpendingDisplay()
+            renderPositionsTable()
+            renderGainersAndLosers()
+            renderPositionDistributionChart()
+          } catch (err) {
+            console.error('获取持仓数据失败', err)
+          }
+        }
+
+        // 监听localStorage的current_prices变化，实时更新持仓价格和资产数据
+        window.addEventListener('storage', function(e) {
+          if (e.key === 'current_prices') {
+            const pricesStr = e.newValue
+            if (!pricesStr) return
+            let prices
+            try {
+              prices = JSON.parse(pricesStr)
+            } catch (err) {
+              return
+            }
+            let updated = false
+            if (Array.isArray(prices)) {
+              prices.forEach(item => {
+                const p = positionsData.find(pos => pos.stock_name === item.stockName)
+                if (p && typeof item.currentPrice === 'number' && p.stock_current_price !== item.currentPrice) {
+                  p.stock_current_price = item.currentPrice
+                  updated = true
+                }
+              })
+            } else if (typeof prices === 'object' && prices !== null) {
+              Object.keys(prices).forEach(ticker => {
+                const p = positionsData.find(pos => pos.stock_name === ticker)
+                if (p && typeof prices[ticker] === 'number' && p.stock_current_price !== prices[ticker]) {
+                  p.stock_current_price = prices[ticker]
+                  updated = true
+                }
+              })
+            }
+            if (updated) {
+              // 当价格更新时，同时更新资产汇总数据
+              updatePositionsData()
+               console.log('开始获取持仓数据...')
+            fetchPositionsData()
+            }
+          }
+          
+          // 监听available_assets变化，实现与stocks.html的同步
+          if (e.key === 'available_assets') {
+            const newValue = parseFloat(e.newValue || '0')
+            assetsData.cash_flow.available_assets = newValue
+            renderAvailableAssets()
+          }
+        })
+        // 获取更新后的数据
+        async function updatePositionsData() {
+          try {
+            // 首先获取最新的资产汇总数据
+            await fetchAssetsSummary()
+            
+            // 上传当前所有持仓股票的名字和当前价格
+            const uploadData = positionsData.map(pos => ({
+              stockName: pos.stock_name,
+              currentPrice: pos.stock_current_price
+            }))
+            
+            const response = await fetch('http://localhost:3002/stocks/update-prices', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(uploadData)
+            })
+            
+            const data = await response.json()
+            
+            // 重新计算支出（成本价乘以数量）
+            const totalSpending = positionsData.reduce((sum, p) => sum + p.stock_cost * p.quantity, 0)
+            assetsData.cash_flow.outcome = totalSpending
+            
+            // 刷新资产卡片
+            document.getElementById('total-assets').textContent = formatCurrency(assetsData.total_assets)
+            document.getElementById('total-profit-loss').textContent = formatCurrency(assetsData.total_profit_loss + 2478)
+            document.getElementById('daily-profit-loss').textContent = formatCurrency(assetsData.daily_profit_loss)
+            document.getElementById('total-market-value').textContent = formatCurrency(assetsData.total_market_value)
+            document.getElementById('available-assets-value').textContent = formatCurrency(assetsData.cash_flow.available_assets)
+            // 更新spending显示
+            document.getElementById('cash-flow-outcome').textContent = formatCurrency(assetsData.cash_flow.outcome)
+            
+            // 刷新UI组件
+            renderAvailableAssets()
+            updateSpendingDisplay()
+            renderPositionsTable()
+            renderGainersAndLosers()
+            renderPositionDistributionChart()
+            
+            // 更新完成后重新获取最新的持仓数据
+            console.log('开始获取持仓数据...')
+            fetchPositionsData()
+          } catch (err) {
+            console.error('更新数据失败', err)
+          }
+        }
+        // 计算总持仓价值
+        function calculateTotalPositionValue() {
+          return positionsData.reduce((total, position) => {
+            return total + position.stock_current_price * position.quantity
+          }, 0)
+        }
+
+        // 计算总盈亏
+        function calculateTotalProfitLoss() {
+          return positionsData.reduce((total, position) => {
+            const positionProfit =
+              (position.stock_current_price - position.stock_cost) *
+              position.quantity
+            return total + positionProfit
+          }, 0)
+        }
+
+        // 计算当日盈亏
+        function calculateDailyProfitLoss() {
+          return positionsData.reduce((total, position) => {
+            return total + position.daily_profit_loss
+          }, 0)
+        }
+
+        // 货币格式化函数
+        function formatCurrency(value) {
+          return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }).format(value)
+        }
+
+        // 货币格式化函数
+        function formatCurrency(value) {
+          return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }).format(value)
+        }
+
+        // 现金流计算（基于总现金流）
+        function calculateCashFlow(totalCashFlow) {
+          // 这里简化处理，实际项目中会有更复杂的逻辑
+          const income = 18665 // 来自其他数据源
+          const outcome = 42500 // 来自其他数据源
+          return {
+            income: income,
+            outcome: outcome,
+            netFlow: income - outcome,
+          }
+        }
+
+        // 百分比格式化函数
+        function formatPercentage(value) {
+          return value.toFixed(2) + '%'
+        }
+
+        // 渲染持仓表格
+        function renderPositionsTable() {
+          const tableBody = document.getElementById('positions-table-body')
+          tableBody.innerHTML = ''
+
+          const totalValue = calculateTotalPositionValue()
+
+          positionsData.forEach((position) => {
+            const positionValue = position.stock_current_price * position.quantity
+            const positionProfit =
+              (position.stock_current_price - position.stock_cost) *
+              position.quantity
+            const positionProfitPercentage = (
+              ((position.stock_current_price - position.stock_cost) /
+                position.stock_cost) *
+              100
+            ).toFixed(2)
+
+            const row = document.createElement('tr')
+
+            row.innerHTML = `
+                      <td>
+                          <div class="position-details">
+                              <img class="stock-logo" src="${getStockLogo(position.stock_name)}" alt="${position.stock_name}" />
+                              <div>
+                                  <div class="position-name">${getCompanyName(position.stock_name)}</div>
+                                  <div class="position-ticker">${position.stock_name}</div>
+                              </div>
+                          </div>
+                      </td>
+                      <td>${formatCurrency(position.stock_cost)}</td>
+                      <td>${formatCurrency(position.stock_current_price)}</td>
+                      <td>${position.quantity}</td>
+                      <td class="position-change ${
+                        position.daily_profit_loss >= 0 ? 'positive' : 'negative'
+                      }">
+                          ${formatCurrency(position.daily_profit_loss)}
+                      </td>
+                      <td class="position-percentage">${
+                        position.position_percentage
+                      }%</td>
+                      <td>${formatCurrency(positionValue)}</td>
+                  `
+
+            tableBody.appendChild(row)
+          })
+        }
+
+        // 渲染涨跌股列表
+        function renderGainersAndLosers() {
+          const gainersList = document.getElementById('gainers-list')
+          const losersList = document.getElementById('losers-list')
+
+          gainersList.innerHTML = ''
+          losersList.innerHTML = ''
+
+          // 排序：按当日盈亏降序排列
+          const sortedPositions = [...positionsData].sort(
+            (a, b) => b.daily_profit_loss - a.daily_profit_loss
+          )
+
+          // 取前6名上涨股
+          sortedPositions.slice(0, 6).forEach((position) => {
+            if (position.daily_profit_loss <= 0) return
+
+            const positionProfitPercentage = (
+              ((position.stock_current_price - position.stock_cost) /
+                Math.abs(position.stock_cost)) *
+              100
+            ).toFixed(2)
+
+            const item = document.createElement('div')
+            item.className = 'position-item'
+            item.innerHTML = `
+                      <div class="position-info">
+                          <img class="stock-logo" src="${getStockLogo(position.stock_name)}" alt="${position.stock_name}" />
+                          <div class="position-item-name">${position.stock_name}</div>
+                      </div>
+                      <div class="position-item-change positive">+${positionProfitPercentage}%</div>
+                  `
+
+            gainersList.appendChild(item)
+          })
+
+          // 取后6名下跌股
+          sortedPositions
+            .slice(-6)
+            .reverse()
+            .forEach((position) => {
+              if (position.daily_profit_loss >= 0) return
+
+              const positionProfitPercentage = (
+                ((position.stock_current_price - position.stock_cost) /
+                  position.stock_cost) *
+                100
+              ).toFixed(2)
+
+              const item = document.createElement('div')
+              item.className = 'position-item'
+              item.innerHTML = `
+                      <div class="position-info">
+                          <img class="stock-logo" src="${getStockLogo(position.stock_name)}" alt="${position.stock_name}" />
+                          <div class="position-item-name">${position.stock_name}</div>
+                      </div>
+                      <div class="position-item-change negative">${positionProfitPercentage}%</div>
+                  `
+
+              losersList.appendChild(item)
+            })
+        }
+
+        // 渲染持仓分布图表
+        function renderPositionDistributionChart() {
+          const ctx = document
+            .getElementById('positionDistributionChart')
+            .getContext('2d')
+
+          // 如果已存在图表实例，先销毁
+          if (positionChart) {
+            positionChart.destroy()
+          }
+
+          // 准备图表数据
+          const labels = positionsData.map((p) => p.stock_name)
+          const data = positionsData.map((p) => p.position_percentage)
+          
+          // 使用明显区分的颜色方案
+          const backgroundColors = [
+            '#FF6B6B', // 红色
+            '#4ECDC4', // 青色
+            '#45B7D1', // 蓝色
+            '#96CEB4', // 薄荷绿
+            '#FFEAA7', // 黄色
+            '#DDA0DD', // 紫色
+            '#FFA07A', // 浅橙色
+            '#87CEEB', // 天蓝色
+            '#FFB6C1', // 浅粉色
+            '#98D8C8', // 薄荷蓝
+            '#F7DC6F', // 金黄色
+            '#BB8FCE', // 淡紫色
+            '#85C1E9', // 浅蓝色
+            '#82E0AA', // 浅绿色
+            '#F8C471', // 浅橙色
+          ]
+
+          // 为边框创建更深的颜色
+          const borderColors = [
+            '#E74C3C', // 深红色
+            '#26A69A', // 深青色
+            '#3498DB', // 深蓝色
+            '#58D68D', // 深绿色
+            '#F1C40F', // 深黄色
+            '#8E44AD', // 深紫色
+            '#E67E22', // 深橙色
+            '#5DADE2', // 深天蓝色
+            '#EC7063', // 深粉色
+            '#45B39D', // 深薄荷蓝
+            '#F4D03F', // 深金黄色
+            '#A569BD', // 深淡紫色
+            '#5499C7', // 深浅蓝色
+            '#52BE80', // 深浅绿色
+            '#EB984E', // 深浅橙色
+          ]
+
+          positionChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: labels,
+              datasets: [
+                {
+                  data: data,
+                  backgroundColor: backgroundColors,
+                  borderColor: borderColors,
+                  borderWidth: 3,
+                  hoverOffset: 8,
+                  hoverBorderWidth: 4,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: false,
+              plugins: {
+                legend: {
+                  position: 'right',
+                  labels: {
+                    boxWidth: 16,
+                    padding: 20,
+                    font: {
+                      size: 13,
+                      weight: '500'
+                    },
+                    color: '#2c3e50',
+                    usePointStyle: true,
+                    pointStyle: 'circle',
+                    generateLabels: function(chart) {
+                      const data = chart.data;
+                      if (data.labels.length && data.datasets.length) {
+                        return data.labels.map((label, i) => {
+                          const meta = chart.getDatasetMeta(0);
+                          const style = meta.controller.getStyle(i);
+                          return {
+                            text: `${label} (${data.datasets[0].data[i]}%)`,
+                            fillStyle: style.backgroundColor,
+                            strokeStyle: style.borderColor,
+                            lineWidth: style.borderWidth,
+                            pointStyle: 'circle',
+                            hidden: meta.data[i].hidden,
+                            index: i
+                          };
+                        });
+                      }
+                      return [];
+                    }
+                  },
+                },
+                tooltip: {
+                  backgroundColor: 'rgba(44, 62, 80, 0.95)',
+                  titleColor: '#fff',
+                  bodyColor: '#fff',
+                  borderColor: '#3498db',
+                  borderWidth: 2,
+                  cornerRadius: 8,
+                  padding: 12,
+                  titleFont: {
+                    size: 14,
+                    weight: 'bold'
+                  },
+                  bodyFont: {
+                    size: 13
+                  },
+                  callbacks: {
+                    title: function(context) {
+                      return context[0].label;
+                    },
+                    label: function (context) {
+                      const percentage = context.parsed;
+                      const value = (percentage / 100 * assetsData.total_market_value);
+                      return [
+                        `Position Ratio: ${percentage}%`,
+                        `Position Value: ${formatCurrency(value)}`
+                      ];
+                    },
+                  },
+                },
+              },
+              cutout: '65%',
+              radius: '85%',
+              interaction: {
+                intersect: false,
+                mode: 'index'
+              },
+              elements: {
+                arc: {
+                  borderAlign: 'center',
+                  borderJoinStyle: 'round'
+                }
+              }
+            },
+          })
+        }
+
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function () {
+          // 获取并渲染持仓数据（包含资产汇总数据）
+          fetchPositionsData()
+        })
+      </script>
+    </body>
+  </html>

@@ -1,7 +1,21 @@
 {
+  "name": "js-men",
+  "version": "1.0.0",
+  "description": "A stock data management and trading system",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["stock", "trading", "finance", "api"],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
+    "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
-    "mysql2": "^3.14.2"
+    "mysql2": "^3.14.3",
+    "openai": "^5.10.3"
   }
 }

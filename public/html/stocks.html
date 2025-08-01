@@ -1,0 +1,3030 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stock Market - Professional Data Analysis</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="./i18n.js"></script>
+    <script src="./realtime-data-manager.js"></script>
+    <style>
+      :root {
+        --primary: #2563eb;
+        --primary-light: #3b82f6;
+        --success: #10b981;
+        --danger: #ef4444;
+        --warning: #f59e0b;
+        --dark: #1e293b;
+        --darker: #0f172a;
+        --light: #f8fafc;
+        --gray: #94a3b8;
+        --border: #e2e8f0;
+        --card-bg: #ffffff;
+        --header-bg: #ffffff;
+        --body-bg: #f1f5f9;
+        --chart-bg: #1a1a2e;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+      }
+
+      body {
+        background-color: var(--body-bg);
+        color: var(--dark);
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding: 20px;
+        background-color: var(--header-bg);
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .logo i {
+        color: var(--primary);
+        font-size: 28px;
+      }
+
+      .logo h1 {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--darker);
+      }
+
+      .nav-tabs {
+        display: flex;
+        gap: 15px;
+        list-style: none;
+      }
+
+      .nav-tabs li a {
+        color: var(--gray);
+        text-decoration: none;
+        font-weight: 500;
+        padding: 8px 16px;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+        font-size: 15px;
+      }
+
+      .nav-tabs li a.active,
+      .nav-tabs li a:hover {
+        background-color: rgba(37, 99, 235, 0.08);
+        color: var(--primary);
+      }
+
+      .btn-add-trade {
+        background-color: #2563eb;
+        color: #fff;
+        padding: 10px 40px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .btn-add-trade:hover {
+        background-color: rgba(37, 99, 235, 0.8);
+      }
+
+      .btn-analyze-stock {
+        background-color: #10b981;
+        color: #fff;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .btn-analyze-stock:hover {
+        background-color: rgba(16, 185, 129, 0.8);
+      }
+
+      .panel {
+        background-color: var(--card-bg);
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        padding: 25px;
+        margin-bottom: 25px;
+      }
+
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+      }
+
+      .panel-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--darker);
+      }
+
+      .filter-bar {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        padding: 15px;
+        background-color: var(--card-bg);
+        border-radius: 12px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        justify-content: center;
+      }
+
+      .filter-group {
+        flex: 1;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        max-width: 400px;
+        font-size: 18px;
+        font-weight: bold;
+      }
+
+      .filter-group label {
+        color: var(--gray);
+      }
+
+      .filter-group input {
+        padding: 10px 10px 10px 10px;
+        margin-left: 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background-color: white;
+        font-size: 16px;
+      }
+
+      .filter-group button {
+        margin-left: 10px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 16px;
+      }
+
+      .chart-btn {
+        color: #2563eb;
+        width: 160px;
+        padding: 8px 16px;
+        font-size: 16px;
+        border-color: transparent;
+        background-color: transparent;
+      }
+
+      .chart-btn:hover {
+        border-bottom: 2px solid rgba(37, 99, 235, 0.5);
+      }
+
+      .chart-btn.active {
+        font-weight: bold;
+        border-bottom: 2px solid #2563eb;
+        background-color: rgba(37, 99, 235, 0.1);
+      }
+
+      .chart-container {
+        height: 500px;
+        margin: 25px 0;
+        background-color: var(--chart-bg);
+        border-radius: 12px;
+        padding: 15px;
+      }
+
+      .stocks-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 25px;
+      }
+
+      .stocks-table th {
+        background-color: var(--primary);
+        color: white;
+        text-align: left;
+        padding: 15px;
+        font-weight: 500;
+      }
+
+      .stocks-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .stocks-table tr:nth-child(even) {
+        background-color: var(--light);
+      }
+
+      .stocks-table tr:hover {
+        background-color: rgba(59, 130, 246, 0.05);
+      }
+
+      .positive {
+        color: var(--success);
+        font-weight: 600;
+      }
+
+      .negative {
+        color: var(--danger);
+        font-weight: 600;
+      }
+
+      .price-details {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+        background-color: var(--card-bg);
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid var(--primary);
+        border-right: 4px solid var(--primary);
+      }
+
+      .price-indicator {
+        text-align: center;
+      }
+
+      .price-indicator h3 {
+        font-size: 16px;
+        color: var(--gray);
+        margin-bottom: 5px;
+      }
+
+      .price-value {
+        font-size: 18px;
+        font-weight: 700;
+      }
+
+      .loader {
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top: 4px solid var(--primary);
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
+      }
+      /* Add error message styles */
+      .chart-container {
+        position: relative;
+      }
+
+      .chart-error {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #ff6b6b;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        z-index: 10;
+        max-width: 80%;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Trade Modal styles */
+      .trade-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.4);
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+      }
+
+      .trade-modal-content {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        padding: 32px 28px 28px 28px;
+        border-radius: 16px;
+        min-width: 420px;
+        max-width: 95vw;
+        position: relative;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        animation: modalSlideIn 0.3s ease-out;
+      }
+
+      @keyframes modalSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-20px) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+        position: relative;
+      }
+
+      .modal-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--darker);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .modal-title i {
+        color: var(--primary);
+        font-size: 20px;
+      }
+
+      .close-modal {
+        position: absolute;
+        right: 0;
+        top: -8px;
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #888;
+        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+      }
+
+      .close-modal:hover {
+        background-color: #f1f5f9;
+        color: #ef4444;
+      }
+
+      .asset-info-panel {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        border: 1px solid #e2e8f0;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      .asset-info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .asset-info-row:last-child {
+        margin-bottom: 0;
+      }
+
+      .asset-label {
+        color: #64748b;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .asset-value {
+        font-weight: 700;
+        font-size: 15px;
+      }
+
+      .form-group {
+        margin-bottom: 18px;
+      }
+
+      .form-label {
+        display: block;
+        color: var(--darker);
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 14px;
+      }
+
+      .form-input-display {
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        width: 100%;
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        color: var(--dark);
+        font-weight: 600;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      .form-input {
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        width: 100%;
+        background: white;
+        color: var(--dark);
+        font-size: 16px;
+        transition: all 0.2s ease;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+
+      .trade-type-buttons {
+        display: flex;
+        gap: 12px;
+        margin-top: 8px;
+        padding: 4px;
+        background: #f1f5f9;
+        border-radius: 10px;
+      }
+
+      .trade-type-btn {
+        flex: 1;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        background: transparent;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 16px;
+        transition: all 0.2s ease;
+        position: relative;
+      }
+
+      .buy-btn {
+        color: #059669;
+      }
+
+      .buy-btn:hover {
+        background: rgba(5, 150, 105, 0.1);
+      }
+
+      .buy-btn.active {
+        background: #059669;
+        color: white;
+        box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+      }
+
+      .sell-btn {
+        color: #dc2626;
+      }
+
+      .sell-btn:hover {
+        background: rgba(220, 38, 38, 0.1);
+      }
+
+      .sell-btn.active {
+        background: #dc2626;
+        color: white;
+        box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+      }
+
+      .trade-submit-btn {
+        width: 100%;
+        padding: 14px 20px;
+        border: none;
+        border-radius: 10px;
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--primary-light) 100%
+        );
+        color: white;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        margin-top: 8px;
+      }
+
+      .trade-submit-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
+      }
+
+      .trade-submit-btn:active {
+        transform: translateY(0);
+      }
+
+      /* Real-time price indicator */
+      .price-display {
+        position: relative;
+        transition: all 0.3s ease;
+      }
+
+      .price-updated {
+        animation: priceFlash 0.5s ease-out;
+      }
+
+      @keyframes priceFlash {
+        0% {
+          background-color: rgba(37, 99, 235, 0.2);
+        }
+        100% {
+          background-color: transparent;
+        }
+      }
+
+      /* Custom Stock Selector Styles */
+      .custom-stock-selector {
+        position: relative;
+        width: 100%;
+        margin-left: 12px;
+      }
+
+      .stock-selector-current {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        min-height: 56px;
+        position: relative;
+      }
+
+      .stock-selector-current:hover {
+        border-color: var(--primary);
+        box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+        transform: translateY(-1px);
+      }
+
+      .stock-selector-current.active {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+
+      .stock-logo {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        object-fit: cover;
+        margin-right: 12px;
+        border: 1px solid #e2e8f0;
+        background: white;
+      }
+
+      .stock-info {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      .stock-ticker {
+        font-weight: 700;
+        font-size: 16px;
+        color: var(--darker);
+        line-height: 1.2;
+      }
+
+      .stock-name {
+        font-size: 13px;
+        color: #64748b;
+        line-height: 1.2;
+        margin-top: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .dropdown-arrow {
+        color: #94a3b8;
+        font-size: 14px;
+        transition: transform 0.3s ease;
+        margin-left: 8px;
+      }
+
+      .stock-selector-current.active .dropdown-arrow {
+        transform: rotate(180deg);
+      }
+
+      .stock-selector-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        max-height: 400px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        margin-top: 4px;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-8px);
+        transition: all 0.3s ease;
+      }
+
+      .stock-selector-dropdown.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      .stock-option {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-bottom: 1px solid #f1f5f9;
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      .stock-option:last-child {
+        border-bottom: none;
+      }
+
+      .stock-option:hover {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        transform: translateX(4px);
+      }
+
+      .stock-option.selected {
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        border-left: 4px solid var(--primary);
+      }
+
+      .stock-option .stock-ticker {
+        font-weight: 600;
+      }
+
+      /* Scrollbar styling for dropdown */
+      .stock-selector-dropdown::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .stock-selector-dropdown::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+      }
+
+      .stock-selector-dropdown::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+
+      .stock-selector-dropdown::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+
+      @media (max-width: 992px) {
+        .price-details {
+          flex-wrap: wrap;
+          gap: 15px;
+        }
+        .price-indicator {
+          flex: 1;
+          min-width: 120px;
+        }
+      }
+
+      /* Language Toggle Button Styles */
+      .lang-toggle {
+        position: relative;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        color: white;
+        border: none;
+        border-radius: 25px;
+        padding: 8px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        overflow: hidden;
+        min-width: 80px;
+        margin-left: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .lang-toggle::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
+      }
+
+      .lang-toggle:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
+        background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+      }
+
+      .lang-toggle:hover::before {
+        left: 100%;
+      }
+
+      .lang-toggle:active {
+        transform: translateY(0);
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+      }
+
+      .lang-toggle .flag-icon {
+        font-size: 16px;
+        transition: transform 0.3s ease;
+      }
+
+      .lang-toggle:hover .flag-icon {
+        transform: scale(1.1);
+      }
+
+      .lang-toggle.switching {
+        animation: langSwitchPulse 0.6s ease-in-out;
+      }
+
+      @keyframes langSwitchPulse {
+        0%, 100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+          box-shadow: 0 8px 30px rgba(37, 99, 235, 0.5);
+        }
+      }
+
+      @media (max-width: 768px) {
+        header {
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .nav-tabs {
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+
+        .filter-bar {
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .panel-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 15px;
+        }
+
+        .filter-group {
+          max-width: 100%;
+          width: 100%;
+        }
+
+        .lang-toggle {
+          margin-left: 0;
+          margin-top: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="logo">
+          <i class="fas fa-chart-line"></i>
+          <h1 data-i18n="system_title">Financial Asset Management System</h1>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 20px">
+          <ul class="nav-tabs">
+            <li><a href="./positions.html" data-i18n="nav_asset">Asset Management</a></li>
+            <li><a href="./trades.html" data-i18n="nav_trade">Trade Management</a></li>
+            <li><a href="#" class="active" data-i18n="nav_stock">Stock Trading</a></li>
+          </ul>
+          <button id="lang-toggle" class="lang-toggle">
+            <span class="flag-icon">🇨🇳</span>
+            <span>中文</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title" data-i18n="stock_market_analysis">Stock Market Analysis</h2>
+            <p>
+              <span data-i18n="data_update_time">Data Update Time:</span>
+              <span id="update-time">2025-07-30 14:30:00</span>
+            </p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 20px">
+            <div style="text-align: right">
+              <div
+                style="font-size: 14px; color: var(--gray); margin-bottom: 2px"
+                data-i18n="available_assets"
+              >
+                Available Assets
+              </div>
+              <div
+                id="available-assets-display"
+                style="
+                  font-size: 18px;
+                  font-weight: bold;
+                  color: var(--success);
+                "
+              >
+                $--
+              </div>
+            </div>
+            <button class="btn-analyze-stock" id="analyze-stock-btn">
+              <i class="fas fa-chart-bar"></i>
+              <span data-i18n="analyze_stock">AI Analyze</span>
+            </button>
+            <button class="btn-add-trade" id="add-trade-btn">
+              <i class="fas fa-plus"></i>
+              <span data-i18n="add_trade">Add Trade</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Left-right layout: left selector, right buttons -->
+        <div
+          class="filter-bar"
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <div class="filter-group" style="max-width: 350px">
+            <label data-i18n="select_stock">Select Stock</label>
+            <!-- Custom Stock Selector with Logos -->
+            <div class="custom-stock-selector">
+              <div class="stock-selector-current" id="stock-selector-current">
+                <img class="stock-logo" src="" alt="" id="current-stock-logo" />
+                <div class="stock-info">
+                  <span class="stock-ticker" id="current-stock-ticker">
+                    AAPL
+                  </span>
+                  <span class="stock-name" id="current-stock-name">
+                    Apple Inc.
+                  </span>
+                </div>
+                <i class="fas fa-chevron-down dropdown-arrow"></i>
+              </div>
+              <div class="stock-selector-dropdown" id="stock-selector-dropdown">
+                <div class="stock-option" data-value="AAPL">
+                  <img
+                    class="stock-logo"
+                    src="https://logo.clearbit.com/apple.com"
+                    alt="Apple"
+                    onerror="this.src='https://via.placeholder.com/32x32/3b82f6/ffffff?text=AAPL'"
+                  />
+                  <div class="stock-info">
+                    <span class="stock-ticker">AAPL</span>
+                    <span class="stock-name">Apple Inc.</span>
+                  </div>
+                </div>
+                <div class="stock-option" data-value="AMD">
+                  <img
+                    class="stock-logo"
+                    src="https://logo.clearbit.com/amd.com"
+                    alt="AMD"
+                    onerror="this.src='https://via.placeholder.com/32x32/dc2626/ffffff?text=AMD'"
+                  />
+                  <div class="stock-info">
+                    <span class="stock-ticker">AMD</span>
+                    <span class="stock-name">Advanced Micro Devices</span>
+                  </div>
+                </div>
+                <div class="stock-option" data-value="AMZN">
+                  <img
+                    class="stock-logo"
+                    src="https://logo.clearbit.com/amazon.com"
+                    alt="Amazon"
+                    onerror="this.src='https://via.placeholder.com/32x32/f59e0b/ffffff?text=AMZN'"
+                  />
+                  <div class="stock-info">
+                    <span class="stock-ticker">AMZN</span>
+                    <span class="stock-name">Amazon.com Inc.</span>
+                  </div>
+                </div>
+                <div class="stock-option" data-value="GOOG">
+                  <img
+                    class="stock-logo"
+                    src="https://logo.clearbit.com/google.com"
+                    alt="Google"
+                    onerror="this.src='https://via.placeholder.com/32x32/10b981/ffffff?text=GOOG'"
+                  />
+                  <div class="stock-info">
+                    <span class="stock-ticker">GOOG</span>
+                    <span class="stock-name">Alphabet Inc.</span>
+                  </div>
+                </div>
+                <div class="stock-option" data-value="INTC">
+                  <img
+                    class="stock-logo"
+                    src="https://logo.clearbit.com/intel.com"
+                    alt="Intel"
+                    onerror="this.src='https://via.placeholder.com/32x32/3b82f6/ffffff?text=INTC'"
+                  />
+                  <div class="stock-info">
+                    <span class="stock-ticker">INTC</span>
+                    <span class="stock-name">Intel Corporation</span>
+                  </div>
+                </div>
+                <div class="stock-option" data-value="META">
+                  <img
+                    class="stock-logo"
+                    src="https://logo.clearbit.com/meta.com"
+                    alt="Meta"
+                    onerror="this.src='https://via.placeholder.com/32x32/1877f2/ffffff?text=META'"
+                  />
+                  <div class="stock-info">
+                    <span class="stock-ticker">META</span>
+                    <span class="stock-name">Meta Platforms Inc.</span>
+                  </div>
+                </div>
+                <div class="stock-option" data-value="MSFT">
+                  <img
+                    class="stock-logo"
+                    src="https://logo.clearbit.com/microsoft.com"
+                    alt="Microsoft"
+                    onerror="this.src='https://via.placeholder.com/32x32/00bcf2/ffffff?text=MSFT'"
+                  />
+                  <div class="stock-info">
+                    <span class="stock-ticker">MSFT</span>
+                    <span class="stock-name">Microsoft Corporation</span>
+                  </div>
+                </div>
+                <div class="stock-option" data-value="NFLX">
+                  <img
+                    class="stock-logo"
+                    src="https://logo.clearbit.com/netflix.com"
+                    alt="Netflix"
+                    onerror="this.src='https://via.placeholder.com/32x32/e50914/ffffff?text=NFLX'"
+                  />
+                  <div class="stock-info">
+                    <span class="stock-ticker">NFLX</span>
+                    <span class="stock-name">Netflix Inc.</span>
+                  </div>
+                </div>
+                <div class="stock-option" data-value="NVDA">
+                  <img
+                    class="stock-logo"
+                    src="https://logo.clearbit.com/nvidia.com"
+                    alt="NVIDIA"
+                    onerror="this.src='https://via.placeholder.com/32x32/76b900/ffffff?text=NVDA'"
+                  />
+                  <div class="stock-info">
+                    <span class="stock-ticker">NVDA</span>
+                    <span class="stock-name">NVIDIA Corporation</span>
+                  </div>
+                </div>
+                <div class="stock-option" data-value="TSLA">
+                  <img
+                    class="stock-logo"
+                    src="https://logo.clearbit.com/tesla.com"
+                    alt="Tesla"
+                    onerror="this.src='https://via.placeholder.com/32x32/cc0000/ffffff?text=TSLA'"
+                  />
+                  <div class="stock-info">
+                    <span class="stock-ticker">TSLA</span>
+                    <span class="stock-name">Tesla Inc.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Hidden select for compatibility -->
+            <select id="stock-selector" style="display: none">
+              <option value="AAPL">AAPL</option>
+              <option value="AMD">AMD</option>
+              <option value="AMZN">AMZN</option>
+              <option value="GOOG">GOOG</option>
+              <option value="INTC">INTC</option>
+              <option value="META">META</option>
+              <option value="MSFT">MSFT</option>
+              <option value="NFLX">NFLX</option>
+              <option value="NVDA">NVDA</option>
+              <option value="TSLA">TSLA</option>
+            </select>
+          </div>
+          <div id="chart-type-btns" style="display: flex; gap: 12px">
+            <button class="chart-btn" data-suffix="_1d_1m" data-i18n="one_day">1 DAY</button>
+            <button class="chart-btn" data-suffix="_5d_5m" data-i18n="five_days">5 DAYS</button>
+            <button class="chart-btn" data-suffix="_dk" data-i18n="day_chart">DAY CHART</button>
+            <button class="chart-btn" data-suffix="_wk" data-i18n="week_chart">WEEK CHART</button>
+            <button class="chart-btn" data-suffix="_mk" data-i18n="month_chart">MONTH CHART</button>
+          </div>
+        </div>
+
+        <div class="price-details">
+          <div class="price-indicator">
+            <h3 data-i18n="current_price">Current Price</h3>
+            <div class="price-value" id="current-price">$--</div>
+          </div>
+          <div class="price-indicator">
+            <h3 data-i18n="todays_change">Today's Change</h3>
+            <div class="price-value" id="daily-change">--</div>
+          </div>
+          <div class="price-indicator">
+            <h3 data-i18n="open_price">Open Price</h3>
+            <div class="price-value" id="open-price">$--</div>
+          </div>
+          <div class="price-indicator">
+            <h3 data-i18n="volume">Volume</h3>
+            <div class="price-value" id="volume">--</div>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <!-- <div class="loader" id="chart-loader" style="display: block"></div> -->
+          <canvas id="stockChart"></canvas>
+        </div>
+
+        <div>
+          <h3 data-i18n="historical_trading_data">Historical Trading Data</h3>
+          <table class="stocks-table">
+            <thead>
+              <tr>
+                <th data-i18n="time">Time</th>
+                <th data-i18n="open">Open</th>
+                <th data-i18n="high">High</th>
+                <th data-i18n="low">Low</th>
+                <th data-i18n="close">Close</th>
+                <th data-i18n="change">Change</th>
+                <th data-i18n="volume">Volume</th>
+              </tr>
+            </thead>
+            <tbody id="stocks-table-body">
+              <tr>
+                <td colspan="7" style="text-align: center" data-i18n="loading_data">Loading data...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Add Trade Modal -->
+      <div id="add-trade-modal" class="trade-modal">
+        <div class="trade-modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title">
+              <i class="fas fa-plus-circle"></i>
+              <span data-i18n="add_new_trade">Add New Trade</span>
+            </h3>
+            <button class="close-modal">&times;</button>
+          </div>
+
+          <!-- Asset information display area -->
+          <div class="asset-info-panel">
+            <div class="asset-info-row">
+              <span class="asset-label" data-i18n="available_assets">Available Assets:</span>
+              <span
+                id="modal-available-assets"
+                class="asset-value"
+                style="color: var(--success)"
+              >
+                $--
+              </span>
+            </div>
+            <div class="asset-info-row">
+              <span class="asset-label" data-i18n="current_holdings">Current Holdings:</span>
+              <span
+                id="modal-current-holdings"
+                class="asset-value"
+                style="color: var(--primary)"
+                data-dynamic-text="shares"
+              >
+                -- shares
+              </span>
+            </div>
+            <div class="asset-info-row">
+              <span id="modal-amount-label" class="asset-label" data-i18n="required_amount">
+                Required Amount:
+              </span>
+              <span
+                id="modal-required-amount"
+                class="asset-value"
+                style="color: var(--warning)"
+              >
+                $--
+              </span>
+            </div>
+          </div>
+
+          <form id="trade-form">
+            <div class="form-group">
+              <label class="form-label" data-i18n="trade_type_label">Trade Type</label>
+              <div class="trade-type-buttons">
+                <button
+                  type="button"
+                  id="buy-btn"
+                  class="trade-type-btn buy-btn active"
+                >
+                  <i class="fas fa-arrow-up"></i>
+                  <span data-i18n="buy">BUY</span>
+                </button>
+                <button
+                  type="button"
+                  id="sell-btn"
+                  class="trade-type-btn sell-btn"
+                >
+                  <i class="fas fa-arrow-down"></i>
+                  <span data-i18n="sell">SELL</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" data-i18n="stock_symbol">Stock Symbol</label>
+              <div id="stock-id-display" class="form-input-display">--</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" data-i18n="current_price">
+                Current Price
+                <i
+                  class="fas fa-sync-alt"
+                  style="color: var(--success); font-size: 12px"
+                  title="Real-time updated"
+                ></i>
+              </label>
+              <div
+                id="trade-price-display"
+                class="form-input-display price-display"
+              >
+                $--
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" data-i18n="quantity">Quantity</label>
+              <input
+                id="trade-quantity"
+                type="number"
+                min="1"
+                required
+                class="form-input"
+                placeholder="Enter quantity..."
+                data-placeholder-key="enter_quantity"
+              />
+            </div>
+
+            <button type="submit" class="trade-submit-btn">
+              <i class="fas fa-check-circle"></i>
+              <span data-i18n="submit_trade">Submit Trade</span>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Stock Analysis Modal -->
+      <div
+        id="stock-analysis-modal"
+        style="
+          display: none;
+          position: fixed;
+          z-index: 1001;
+          left: 0;
+          top: 0;
+          width: 100vw;
+          height: 100vh;
+          background: rgba(0, 0, 0, 0.3);
+          align-items: center;
+          justify-content: center;
+        "
+      >
+        <div
+          style="
+            background: #fff;
+            padding: 24px;
+            border-radius: 12px;
+            width: 90vw;
+            max-width: 800px;
+            max-height: 90vh;
+            position: relative;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+          "
+        >
+          <button
+            class="close-analysis-modal"
+            style="
+              position: absolute;
+              right: 16px;
+              top: 12px;
+              background: none;
+              border: none;
+              font-size: 24px;
+              color: #888;
+              cursor: pointer;
+            "
+          >
+            &times;
+          </button>
+
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              margin-bottom: 20px;
+              border-bottom: 2px solid #e2e8f0;
+              padding-bottom: 16px;
+            "
+          >
+            <i
+              class="fas fa-chart-bar"
+              style="color: #10b981; font-size: 24px"
+            ></i>
+            <h3 style="color: #1e293b; margin: 0" data-i18n="ai_investment_analysis">AI Investment Analysis</h3>
+            <span
+              id="analysis-stock-ticker"
+              style="
+                background: #10b981;
+                color: white;
+                padding: 4px 12px;
+                border-radius: 16px;
+                font-weight: bold;
+                font-size: 14px;
+              "
+            ></span>
+          </div>
+
+          <div
+            style="
+              flex: 1;
+              overflow-y: auto;
+              background: #f8fafc;
+              border-radius: 8px;
+              padding: 16px;
+              border: 1px solid #e2e8f0;
+            "
+          >
+            <div
+              id="analysis-content"
+              style="line-height: 1.6; color: #334155"
+            ></div>
+            <div
+              id="analysis-loading"
+              style="display: none; text-align: center; padding: 20px"
+            >
+              <div class="loader"></div>
+              <p style="margin-top: 12px; color: #6b7280">
+                AI is analyzing stock data, please wait...
+              </p>
+            </div>
+          </div>
+
+          <div
+            style="
+              margin-top: 16px;
+              padding-top: 16px;
+              border-top: 1px solid #e2e8f0;
+              font-size: 12px;
+              color: #6b7280;
+              text-align: center;
+            "
+          >
+            Analysis results are for reference only. Investment involves risks,
+            please make decisions carefully.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // DOM elements
+      const stockSelector = document.getElementById('stock-selector')
+      const chartLoader = document.getElementById('chart-loader')
+      const stockChartCanvas = document.getElementById('stockChart')
+
+      // Global variables
+      let stocksData = {}
+      let chartInstance = null
+      let selectedStock = 'AAPL'
+      let tableSuffix = '_dk' // Default daily K-line
+      let previousPrice = null // 前一个价格，用于计算Today's Change
+      let currentAnalysisController = null // 当前分析请求的控制器
+
+      // Stock data mapping for logos and names
+      const stockData = {
+        AAPL: {
+          name: 'Apple Inc.',
+          logo: 'https://logo.clearbit.com/apple.com',
+        },
+        AMD: {
+          name: 'Advanced Micro Devices',
+          logo: 'https://logo.clearbit.com/amd.com',
+        },
+        AMZN: {
+          name: 'Amazon.com Inc.',
+          logo: 'https://logo.clearbit.com/amazon.com',
+        },
+        GOOG: {
+          name: 'Alphabet Inc.',
+          logo: 'https://logo.clearbit.com/google.com',
+        },
+        INTC: {
+          name: 'Intel Corporation',
+          logo: 'https://logo.clearbit.com/intel.com',
+        },
+        META: {
+          name: 'Meta Platforms Inc.',
+          logo: 'https://logo.clearbit.com/meta.com',
+        },
+        MSFT: {
+          name: 'Microsoft Corporation',
+          logo: 'https://logo.clearbit.com/microsoft.com',
+        },
+        NFLX: {
+          name: 'Netflix Inc.',
+          logo: 'https://logo.clearbit.com/netflix.com',
+        },
+        NVDA: {
+          name: 'NVIDIA Corporation',
+          logo: 'https://logo.clearbit.com/nvidia.com',
+        },
+        TSLA: {
+          name: 'Tesla Inc.',
+          logo: 'https://logo.clearbit.com/tesla.com',
+        },
+      }
+
+      // Initialize Custom Stock Selector
+      function initCustomStockSelector() {
+        const currentSelector = document.getElementById(
+          'stock-selector-current'
+        )
+        const dropdown = document.getElementById('stock-selector-dropdown')
+        const hiddenSelect = document.getElementById('stock-selector')
+
+        // Set initial state
+        updateCurrentSelection('AAPL')
+
+        // Toggle dropdown
+        currentSelector.addEventListener('click', function (e) {
+          e.stopPropagation()
+          const isActive = currentSelector.classList.contains('active')
+
+          if (isActive) {
+            closeDropdown()
+          } else {
+            openDropdown()
+          }
+        })
+
+        // Handle stock option clicks
+        dropdown.addEventListener('click', function (e) {
+          const stockOption = e.target.closest('.stock-option')
+          if (stockOption) {
+            const value = stockOption.dataset.value
+            selectStock(value)
+            closeDropdown()
+          }
+        })
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function (e) {
+          if (
+            !currentSelector.contains(e.target) &&
+            !dropdown.contains(e.target)
+          ) {
+            closeDropdown()
+          }
+        })
+
+        // Close dropdown on escape key
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape') {
+            closeDropdown()
+          }
+        })
+
+        function openDropdown() {
+          currentSelector.classList.add('active')
+          dropdown.classList.add('show')
+
+          // Update selected state in dropdown
+          const currentValue = hiddenSelect.value
+          dropdown.querySelectorAll('.stock-option').forEach((option) => {
+            option.classList.toggle(
+              'selected',
+              option.dataset.value === currentValue
+            )
+          })
+        }
+
+        function closeDropdown() {
+          currentSelector.classList.remove('active')
+          dropdown.classList.remove('show')
+        }
+
+        function selectStock(value) {
+          // Update hidden select
+          hiddenSelect.value = value
+
+          // Update visual selection
+          updateCurrentSelection(value)
+
+          // Trigger change event on hidden select to maintain compatibility
+          const changeEvent = new Event('change', { bubbles: true })
+          hiddenSelect.dispatchEvent(changeEvent)
+        }
+
+        function updateCurrentSelection(value) {
+          const data = stockData[value]
+          if (!data) return
+
+          const currentLogo = document.getElementById('current-stock-logo')
+          const currentTicker = document.getElementById('current-stock-ticker')
+          const currentName = document.getElementById('current-stock-name')
+
+          currentLogo.src = data.logo
+          currentLogo.alt = value
+          currentLogo.onerror = function () {
+            this.src = `https://via.placeholder.com/32x32/3b82f6/ffffff?text=${value}`
+          }
+
+          currentTicker.textContent = value
+          currentName.textContent = data.name
+        }
+      }
+
+      // Currency formatting
+      function formatCurrency(value) {
+        if (!value) return '$--'
+        return '$' + Number(value).toFixed(2)
+      }
+
+      // Number formatting (thousands separator)
+      function formatNumber(num) {
+        if (isNaN(num)) return '--'
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+      }
+
+      // Calculate change
+      function calculateChange(current, previous) {
+        const change = (((current - previous) / previous) * 100).toFixed(3)
+        return `${change >= 0 ? '+' : ''}${change}%`
+      }
+
+      // Date formatting
+      function formatDateTime(dateString) {
+        const date = new Date(dateString)
+        return `${date.getFullYear()}-${(date.getMonth() + 1)
+          .toString()
+          .padStart(2, '0')}-${date
+          .getDate()
+          .toString()
+          .padStart(2, '0')} ${date
+          .getHours()
+          .toString()
+          .padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+      }
+
+      // Check stock position for sell orders
+      async function checkStockPosition(stockTicker, requiredQuantity) {
+        try {
+          const response = await fetch('http://localhost:3002/stocks/sync-position', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          })
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+
+          const positions = await response.json()
+          
+          // Find the position for the current stock
+          const stockPosition = positions.find(position => position.stock_name === stockTicker)
+          
+          if (!stockPosition) {
+            return {
+              success: false,
+              message: `No position found for ${stockTicker}. You don't currently hold this stock.`
+            }
+          }
+
+          const currentQuantity = stockPosition.quantity
+
+          if (currentQuantity < requiredQuantity) {
+            const currentLang = localStorage.getItem('lang') || 'en'
+            let message = i18n[currentLang]['insufficient_stock'] || 'Insufficient stock quantity. You currently hold {current} shares of {ticker}, but you\'re trying to sell {required} shares. Please enter a quantity no more than {current}.'
+            
+            // Replace placeholders
+            message = message
+              .replace(/{current}/g, currentQuantity)
+              .replace(/{ticker}/g, stockTicker)
+              .replace(/{required}/g, requiredQuantity)
+            
+            return {
+              success: false,
+              message: message
+            }
+          }
+
+          return {
+            success: true,
+            currentQuantity: currentQuantity
+          }
+        } catch (error) {
+          console.error('Failed to check stock position:', error)
+          return {
+            success: false,
+            message: 'Failed to verify stock position. Please try again later.'
+          }
+        }
+      }
+
+      // Validate trading input data
+      async function validateTradeInput(quantity, price, tradeType = 'BUY', stockTicker = '') {
+        // Check if quantity is a positive integer
+        if (!Number.isInteger(quantity) || quantity <= 0) {
+          alert('Please enter a valid quantity (positive integer)')
+          return false
+        }
+
+        // Check if price is valid
+        if (isNaN(price) || price <= 0) {
+          alert('Invalid price')
+          return false
+        }
+
+        // For SELL orders, check stock position
+        if (tradeType === 'SELL') {
+          const positionCheck = await checkStockPosition(stockTicker, quantity)
+          if (!positionCheck.success) {
+            alert(positionCheck.message)
+            return false
+          }
+        }
+
+        // Only check available assets for BUY orders
+        if (tradeType === 'BUY') {
+          // 从后端获取最新的available assets
+          const summaryData = await fetchAssetsSummary()
+          let availableAssets
+          
+          if (summaryData) {
+            availableAssets = Number(summaryData.cashflow) || 0
+          } else {
+            // 如果后端请求失败，从localStorage读取
+            availableAssets = parseFloat(localStorage.getItem('available_assets') || '0')
+          }
+          
+          const totalCost = price * quantity
+
+          if (totalCost > availableAssets) {
+            alert(
+              `Trade amount $${totalCost.toFixed(
+                2
+              )} exceeds available assets $${availableAssets.toFixed(
+                2
+              )}, please re-enter quantity`
+            )
+            return false
+          }
+        }
+
+        return true
+      }
+
+      // Update local trade record cache
+      function updateLocalTrades(newTradeData) {
+        try {
+          // Get existing trade records
+          let existingTrades = localStorage.getItem('trade_record')
+          let tradesArray = []
+
+          if (existingTrades) {
+            tradesArray = JSON.parse(existingTrades)
+          }
+
+          // Add new trade records
+          if (Array.isArray(newTradeData)) {
+            tradesArray = tradesArray.concat(newTradeData)
+          } else {
+            tradesArray.push(newTradeData)
+          }
+
+          // Save back to localStorage
+          localStorage.setItem('trade_record', JSON.stringify(tradesArray))
+
+          console.log('Trade record saved:', newTradeData)
+        } catch (error) {
+          console.error('Failed to save trade record:', error)
+        }
+      }
+
+      // 从后端获取资产汇总数据
+      async function fetchAssetsSummary() {
+        try {
+          const response = await fetch('http://localhost:3002/stocks/summary')
+          const data = await response.json()
+          
+          // 更新localStorage中的available_assets，保持与positions.html同步
+          localStorage.setItem('available_assets', data.cashflow.toString())
+          
+          return data
+        } catch (error) {
+          console.error('获取资产汇总数据失败', error)
+          return null
+        }
+      }
+
+      // Update available assets display
+      async function updateAvailableAssetsDisplay() {
+        // 首先尝试从后端获取最新数据
+        const summaryData = await fetchAssetsSummary()
+        
+        let availableAssets
+        if (summaryData) {
+          availableAssets = Number(summaryData.cashflow) || 0
+        } else {
+          // 如果后端请求失败，从localStorage读取
+          availableAssets = parseFloat(localStorage.getItem('available_assets') || '0')
+        }
+        
+        const formattedAssets = formatCurrency(availableAssets)
+
+        // Update main page available assets display
+        const mainDisplay = document.getElementById('available-assets-display')
+        if (mainDisplay) {
+          mainDisplay.textContent = formattedAssets
+        }
+
+        // Update available assets display in modal
+        const modalDisplay = document.getElementById('modal-available-assets')
+        if (modalDisplay) {
+          modalDisplay.textContent = formattedAssets
+        }
+      }
+
+      // Get current stock holdings
+      async function getCurrentStockHoldings(stockTicker) {
+        try {
+          const response = await fetch('http://localhost:3002/stocks/sync-position', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          })
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+
+          const positions = await response.json()
+          
+          // Find the position for the current stock
+          const stockPosition = positions.find(position => position.stock_name === stockTicker)
+          
+          if (!stockPosition) {
+            return 0 // No holdings
+          }
+
+          return stockPosition.quantity || 0
+        } catch (error) {
+          console.error('Failed to get stock holdings:', error)
+          return 0
+        }
+      }
+
+      // Update current holdings display in modal
+      async function updateCurrentHoldingsDisplay(stockTicker) {
+        const modalHoldingsDisplay = document.getElementById('modal-current-holdings')
+        if (modalHoldingsDisplay) {
+          try {
+            const holdings = await getCurrentStockHoldings(stockTicker)
+            const currentLang = localStorage.getItem('lang') || 'en'
+            const sharesText = i18n[currentLang]['shares'] || 'shares'
+            modalHoldingsDisplay.textContent = `${formatNumber(holdings)} ${sharesText}`
+            
+            // Change color based on holdings
+            if (holdings > 0) {
+              modalHoldingsDisplay.style.color = 'var(--primary)'
+            } else {
+              modalHoldingsDisplay.style.color = 'var(--gray)'
+            }
+          } catch (error) {
+            const currentLang = localStorage.getItem('lang') || 'en'
+            const sharesText = i18n[currentLang]['shares'] || 'shares'
+            modalHoldingsDisplay.textContent = `-- ${sharesText}`
+            modalHoldingsDisplay.style.color = 'var(--gray)'
+          }
+        }
+      }
+
+      // Update required amount display
+      function updateRequiredAmountDisplay() {
+        const priceText = document
+          .getElementById('trade-price-display')
+          .textContent.replace('$', '')
+        const price = parseFloat(priceText) || 0
+        const quantity =
+          parseInt(document.getElementById('trade-quantity').value) || 0
+        const requiredAmount = price * quantity
+
+        // Check current trade type
+        const buyBtn = document.getElementById('buy-btn')
+        const sellBtn = document.getElementById('sell-btn')
+        const isSell = sellBtn && sellBtn.classList.contains('active')
+
+        const modalRequiredDisplay = document.getElementById(
+          'modal-required-amount'
+        )
+        const modalAmountLabel = document.getElementById('modal-amount-label')
+
+        if (modalRequiredDisplay && modalAmountLabel) {
+          // Get current language
+          const currentLang = localStorage.getItem('lang') || 'en'
+          
+          if (isSell) {
+            // For sell orders, show as positive income
+            modalAmountLabel.setAttribute('data-i18n', 'income_amount')
+            modalAmountLabel.textContent = i18n[currentLang]['income_amount'] || 'Income Amount:'
+            modalRequiredDisplay.textContent =
+              '+' + formatCurrency(requiredAmount)
+            modalRequiredDisplay.style.color = 'var(--success)' // Green for income
+          } else {
+            // For buy orders, show as negative cost
+            modalAmountLabel.setAttribute('data-i18n', 'required_amount')
+            modalAmountLabel.textContent = i18n[currentLang]['required_amount'] || 'Required Amount:'
+            modalRequiredDisplay.textContent = formatCurrency(requiredAmount)
+
+            // Change color based on whether it exceeds available assets
+            fetchAssetsSummary().then(summaryData => {
+              let availableAssets
+              if (summaryData) {
+                availableAssets = Number(summaryData.cashflow) || 0
+              } else {
+                availableAssets = parseFloat(localStorage.getItem('available_assets') || '0')
+              }
+              
+              if (requiredAmount > availableAssets && requiredAmount > 0) {
+                modalRequiredDisplay.style.color = 'var(--danger)'
+              } else {
+                modalRequiredDisplay.style.color = 'var(--warning)'
+              }
+            })
+          }
+        }
+      }
+
+      // Update trade modal price in real-time
+      function updateTradeModalPrice() {
+        const tradeModal = document.getElementById('add-trade-modal')
+        if (tradeModal && tradeModal.style.display === 'flex') {
+          // Update current price in modal
+          const currentPriceText =
+            document.getElementById('current-price').textContent
+          const tradePriceDisplay = document.getElementById(
+            'trade-price-display'
+          )
+
+          // Only update if price has changed
+          if (tradePriceDisplay.textContent !== currentPriceText) {
+            tradePriceDisplay.textContent = currentPriceText
+
+            // Add visual feedback for price update
+            tradePriceDisplay.classList.add('price-updated')
+            setTimeout(() => {
+              tradePriceDisplay.classList.remove('price-updated')
+            }, 500)
+          }
+
+          // Update required amount calculation
+          updateRequiredAmountDisplay()
+        }
+      }
+
+      // Render time-sharing K-line chart
+      function renderStockChart(data) {
+        const canvas = document.getElementById('stockChart')
+        if (!canvas) return
+        canvas.width = 1300
+        canvas.height = 500
+
+        const ctx = canvas.getContext('2d')
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+        const priceData = data.price_data
+        const opens = priceData.open
+        const closes = priceData.close
+        const highs = priceData.high
+        const lows = priceData.low
+        const timestamps = priceData.timestamp
+
+        const min = Math.min(...lows)
+        const max = Math.max(...highs)
+        const padding = 70
+        const chartWidth = canvas.width - padding * 2
+        const chartHeight = canvas.height - padding * 2
+
+        // Draw coordinate axes
+        ctx.strokeStyle = '#fff'
+        ctx.lineWidth = 4
+        ctx.beginPath()
+        ctx.moveTo(padding, padding)
+        ctx.lineTo(padding, canvas.height - padding)
+        ctx.lineTo(canvas.width - padding, canvas.height - padding)
+        ctx.stroke()
+
+        // Coordinate axis names
+        ctx.save()
+        ctx.fillStyle = '#fff'
+        ctx.font = 'bold 18px Arial'
+        ctx.translate(35, canvas.height / 2)
+        ctx.rotate(-Math.PI / 2)
+        ctx.textAlign = 'center'
+        ctx.fillText('Price', 0, 0)
+        ctx.restore()
+        ctx.fillStyle = '#fff'
+        ctx.font = 'bold 18px Arial'
+        ctx.textAlign = 'center'
+        ctx.fillText('Time', canvas.width / 2, canvas.height - padding + 35)
+
+        // Draw K-line chart
+        ctx.lineWidth = 1
+        const candleWidth = Math.max(3, (chartWidth / closes.length) * 0.7)
+        const offsetX = 5
+        const offsetY = 5
+        for (let i = 0; i < closes.length; i++) {
+          const x = padding + (i / (closes.length - 1)) * chartWidth + offsetX
+          // Calculate Y coordinates
+          const yOpen =
+            canvas.height -
+            padding -
+            ((opens[i] - min) / (max - min)) * chartHeight -
+            offsetY
+          const yClose =
+            canvas.height -
+            padding -
+            ((closes[i] - min) / (max - min)) * chartHeight -
+            offsetY
+          const yHigh =
+            canvas.height -
+            padding -
+            ((highs[i] - min) / (max - min)) * chartHeight -
+            offsetY
+          const yLow =
+            canvas.height -
+            padding -
+            ((lows[i] - min) / (max - min)) * chartHeight -
+            offsetY
+
+          // Determine rise or fall
+          const isUp = closes[i] >= opens[i]
+
+          ctx.strokeStyle = isUp ? '#10b981' : '#ef4444' // Green for rise, red for fall
+          ctx.fillStyle = isUp ? '#10b981' : '#ef4444'
+
+          // Draw shadow lines
+          ctx.beginPath()
+          ctx.moveTo(x, yHigh)
+          ctx.lineTo(x, yLow)
+          ctx.stroke()
+
+          // Draw K-line entity
+          const candleTop = Math.min(yOpen, yClose)
+          const candleHeight = Math.abs(yOpen - yClose)
+          ctx.beginPath()
+          ctx.rect(
+            x - candleWidth / 2,
+            candleTop,
+            candleWidth,
+            candleHeight || 2
+          )
+          if (isUp) {
+            ctx.stroke()
+            ctx.fillRect(
+              x - candleWidth / 2,
+              candleTop,
+              candleWidth,
+              candleHeight || 2
+            )
+          } else {
+            ctx.fill()
+          }
+        }
+
+        // Draw price scale
+        ctx.fillStyle = '#fff'
+        ctx.font = 'bold 18px Arial'
+        ctx.fillText(max.toFixed(2), 35, padding + 5)
+        ctx.fillText(min.toFixed(2), 35, canvas.height - padding)
+
+        // Draw time scale (only first and last)
+        if (timestamps && timestamps.length > 0) {
+          ctx.font = 'bold 18px Arial'
+          ctx.fillText(
+            formatDateTime(timestamps[0]),
+            padding + 70,
+            canvas.height - padding + 35
+          )
+          ctx.fillText(
+            formatDateTime(timestamps[timestamps.length - 1]),
+            canvas.width - padding - 30,
+            canvas.height - padding + 35
+          )
+        }
+      }
+
+      // Render data table
+      function renderStocksTable(data) {
+        const tableBody = document.getElementById('stocks-table-body')
+        tableBody.innerHTML = ''
+
+        const priceData = data.price_data
+
+        for (let i = priceData.timestamp.length - 1; i >= 0; i--) {
+          const row = document.createElement('tr')
+          const change =
+            0 <= i - 1
+              ? calculateChange(priceData.close[i], priceData.close[i - 1])
+              : '0.00%'
+
+          const isPositive = priceData.close[i] >= priceData.close[i - 1]
+          row.innerHTML = `
+                    <td>${formatDateTime(priceData.timestamp[i])}</td>
+                    <td>${formatCurrency(priceData.open[i])}</td>
+                    <td>${formatCurrency(priceData.high[i])}</td>
+                    <td>${formatCurrency(priceData.low[i])}</td>
+                    <td>${formatCurrency(priceData.close[i])}</td>
+                    <td class="${
+                      isPositive ? 'positive' : 'negative'
+                    }">${change}</td>
+                    <td>${formatNumber(priceData.volume[i])}</td>
+                `
+          tableBody.appendChild(row)
+        }
+      }
+
+      // Update page time
+      function updateDateTime() {
+        const now = new Date()
+        const formattedDate = `${now.getFullYear()}-${(now.getMonth() + 1)
+          .toString()
+          .padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now
+          .getHours()
+          .toString()
+          .padStart(2, '0')}:${now
+          .getMinutes()
+          .toString()
+          .padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
+        document.getElementById('update-time').textContent = formattedDate
+      }
+
+      // Initialize stock selector
+      function initStockSelector(data) {
+        // Auto-fill the first stock code
+        const tickers = Object.keys(data)
+        if (tickers.length > 0) {
+          stockSelector.value = tickers[0]
+          selectedStock = tickers[0]
+        }
+      }
+
+      // Apply filters
+      function applyFilters() {
+        selectedStock = stockSelector.value.trim().toUpperCase()
+        if (stocksData[selectedStock]) {
+          renderStockChart(stocksData[selectedStock])
+          renderStocksTable(stocksData[selectedStock])
+          // Refresh top price block
+          const priceData = stocksData[selectedStock].price_data
+          const len = priceData.close.length
+          document.getElementById('current-price').textContent = formatCurrency(
+            priceData.close[len - 1]
+          )
+          document.getElementById('open-price').textContent = formatCurrency(
+            priceData.open[len - 1]
+          )
+          document.getElementById('volume').textContent = formatNumber(
+            priceData.volume[len - 1]
+          )
+
+          // 计算 Today's Change - 使用开盘价作为基准
+          if (len > 0) {
+            const currentPrice = priceData.close[len - 1]
+            const openPrice = priceData.open[len - 1]
+            const changePercent = (
+              ((currentPrice - openPrice) / openPrice) *
+              100
+            ).toFixed(3)
+            const todayChange = `${
+              changePercent >= 0 ? '+' : ''
+            }${changePercent}%`
+
+            document.getElementById('daily-change').textContent = todayChange
+            document.getElementById('daily-change').className =
+              changePercent >= 0
+                ? 'price-value positive'
+                : 'price-value negative'
+          } else {
+            document.getElementById('daily-change').textContent = '--'
+            document.getElementById('daily-change').className = 'price-value'
+          }
+        } else {
+          // Stock not found, clear chart and table
+          const canvas = document.getElementById('stockChart')
+          if (canvas) {
+            const ctx = canvas.getContext('2d')
+            ctx.clearRect(0, 0, canvas.width, canvas.height)
+          }
+          document.getElementById('stocks-table-body').innerHTML =
+            '<tr><td colspan="7" style="text-align: center; color: var(--danger);">No Data</td></tr>'
+        }
+      }
+
+      // Load data (with table suffix)
+      async function loadStocksData(ticker, suffix = '_dk') {
+        try {
+          const url = `http://localhost:3000/api/stock_data?ticker=${ticker.toLowerCase()}&suffix=${suffix}`
+          const response = await fetch(url)
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+          const data = await response.json()
+          return { [ticker]: data }
+        } catch (error) {
+          console.error('Failed to load data:', error)
+          return null
+        }
+      }
+
+      // 更新实时价格数据 - 使用共享的实时数据管理器
+      function updateRealTimeData() {
+        if (!window.realtimeDataManager) {
+          console.error('Realtime data manager not available')
+          return
+        }
+
+        // 使用当前选中的股票
+        const currentTicker = selectedStock
+
+        console.log(
+          `Updating real-time data for current ticker: ${currentTicker}`
+        )
+
+        // 获取当前股票的数据
+        const stockData =
+          window.realtimeDataManager.getStockDataByTicker(currentTicker)
+        if (!stockData) {
+          console.log(`No data found for ticker: ${currentTicker}`)
+          return
+        }
+
+        // 获取当前价格
+        const currentPrice =
+          window.realtimeDataManager.getCurrentPrice(currentTicker)
+        if (currentPrice === null) {
+          console.log(`No current price available for ticker: ${currentTicker}`)
+          return
+        }
+
+        // 计算全局开始时间到现在的时间（秒）
+        const currentTime = Date.now()
+        const globalStartTime =
+          window.realtimeDataManager.globalStartTime || currentTime
+        const elapsedSeconds = Math.floor(
+          (currentTime - globalStartTime) / 1000
+        )
+
+        // 计算当前交易量索引
+        const volumeIndex = elapsedSeconds % stockData.volumes.length
+        const currentVolume = stockData.volumes[volumeIndex]
+
+        const openPrice = stockData.open_prices[0] // Open Price始终是第一个值
+
+        console.log(
+          `Price: ${currentPrice}, Volume: ${currentVolume}, Open: ${openPrice}`
+        )
+
+        // 计算Today's Change - 使用开盘价作为基准
+        let todayChange = '--'
+        let changeClass = ''
+
+        // 始终使用开盘价计算Today's Change
+        const changePercent = (
+          ((currentPrice - openPrice) / openPrice) *
+          100
+        ).toFixed(3)
+        todayChange = `${changePercent >= 0 ? '+' : ''}${changePercent}%`
+        changeClass = changePercent >= 0 ? 'positive' : 'negative'
+
+        // 更新页面显示
+        document.getElementById('current-price').textContent =
+          formatCurrency(currentPrice)
+        document.getElementById('open-price').textContent =
+          formatCurrency(openPrice)
+        document.getElementById('volume').textContent =
+          formatNumber(currentVolume)
+
+        const dailyChangeElement = document.getElementById('daily-change')
+        dailyChangeElement.textContent = todayChange
+        dailyChangeElement.className = `price-value ${changeClass}`
+
+        // 保存当前价格作为下次计算变化的基准
+        previousPrice = currentPrice
+
+        // Update trade modal price if modal is open
+        updateTradeModalPrice()
+
+        // 当实时价格更新时，同步更新资产数据
+        fetchAssetsSummary().then(() => {
+          updateAvailableAssetsDisplay()
+        })
+
+        console.log(
+          `Updated: ${currentTicker} - Price: ${currentPrice}, Volume: ${currentVolume}, Change: ${todayChange}`
+        )
+      }
+
+      // Page initialization
+      async function init() {
+        // 首先从后端获取最新的资产数据，不再使用固定初始值
+        await fetchAssetsSummary()
+
+        stocksData = await loadStocksData(stockSelector.value, tableSuffix)
+        if (!stocksData) {
+          document.getElementById('chart-loader').style.display = 'none'
+          document.getElementById('stocks-table-body').innerHTML =
+            '<tr><td colspan="7" style="text-align: center; color: var(--danger);">Failed to load stock data, please check stocks.json file</td></tr>'
+          return
+        }
+        initStockSelector(stocksData)
+        applyFilters()
+        updateDateTime()
+        updateAvailableAssetsDisplay() // Update available assets display
+        setInterval(updateDateTime, 1000)
+
+        // 监听实时数据更新事件，当价格更新时自动刷新当前股票的显示
+        window.addEventListener('storage', function (e) {
+          if (e.key === 'current_prices') {
+            updateRealTimeData()
+          }
+        })
+
+        // 如果实时数据管理器已经在运行，立即更新一次显示
+        if (
+          window.realtimeDataManager &&
+          window.realtimeDataManager.isRunning()
+        ) {
+          updateRealTimeData()
+        }
+
+        // Stock selector change
+        stockSelector.addEventListener('change', async () => {
+          selectedStock = stockSelector.value
+
+          // 加载新股票的静态数据
+          stocksData = await loadStocksData(selectedStock, tableSuffix)
+
+          // 如果实时更新正在运行，只更新图表和表格，然后立即触发一次实时更新
+          if (
+            window.realtimeDataManager &&
+            window.realtimeDataManager.isRunning()
+          ) {
+            // 渲染图表和表格
+            renderStockChart(stocksData[selectedStock])
+            renderStocksTable(stocksData[selectedStock])
+
+            // 立即触发一次实时数据更新以显示新股票的实时价格
+            updateRealTimeData()
+          } else {
+            // 如果没有实时更新，正常更新所有内容
+            applyFilters()
+          }
+
+          // Update trade modal if open
+          const tradeModal = document.getElementById('add-trade-modal')
+          if (tradeModal && tradeModal.style.display === 'flex') {
+            document.getElementById('stock-id-display').textContent =
+              selectedStock
+            updateTradeModalPrice()
+            // Update holdings display when stock changes
+            await updateCurrentHoldingsDisplay(selectedStock)
+          }
+
+          console.log(`Stock manually changed to: ${selectedStock}`)
+        })
+        // Chart type button events
+        document.querySelectorAll('.chart-btn').forEach((btn) => {
+          btn.addEventListener('click', async function () {
+            // Remove active class from all buttons
+            document
+              .querySelectorAll('.chart-btn')
+              .forEach((b) => b.classList.remove('active'))
+            // Add active class to currently clicked button
+            this.classList.add('active')
+
+            tableSuffix = btn.getAttribute('data-suffix')
+
+            // 加载对应图表类型的静态数据
+            stocksData = await loadStocksData(stockSelector.value, tableSuffix)
+
+            // 如果实时更新正在运行，只更新图表和表格，不要更新价格指标（保持实时价格）
+            if (
+              window.realtimeDataManager &&
+              window.realtimeDataManager.isRunning()
+            ) {
+              // 只渲染图表和表格，保持实时价格数据不变
+              renderStockChart(stocksData[selectedStock])
+              renderStocksTable(stocksData[selectedStock])
+
+              // 不更新价格指标，让实时更新继续控制价格显示
+              console.log('Chart type changed, keeping real-time price data')
+            } else {
+              // 如果没有实时更新，正常更新所有内容包括价格指标
+              applyFilters()
+            }
+
+            console.log(`Chart type changed to: ${tableSuffix}`)
+          })
+        })
+
+        // Add active class to the 3rd button on initialization
+        const chartButtons = document.querySelectorAll('.chart-btn')
+        if (chartButtons.length >= 3) {
+          chartButtons[2].classList.add('active')
+        } else if (chartButtons.length > 0) {
+          chartButtons[0].classList.add('active')
+        }
+      }
+
+      // Stock analysis function
+      async function analyzeCurrentStock() {
+        // 取消之前的分析请求
+        if (currentAnalysisController) {
+          currentAnalysisController.abort()
+          currentAnalysisController = null
+        }
+
+        const stockTicker = document.getElementById('stock-selector').value
+        const currentPrice =
+          document.getElementById('current-price').textContent
+        const dailyChange = document.getElementById('daily-change').textContent
+        const volume = document.getElementById('volume').textContent
+        const openPrice = document.getElementById('open-price').textContent
+
+        // Get historical data for analysis
+        const stockData = stocksData[stockTicker]
+        if (!stockData) {
+          const currentLang = localStorage.getItem('lang') || 'en'
+          const alertMessage = currentLang === 'zh' 
+            ? '股票数据不可用于分析'
+            : 'Stock data not available for analysis'
+          alert(alertMessage)
+          return
+        }
+
+        // Show analysis modal
+        document.getElementById('analysis-stock-ticker').textContent =
+          stockTicker
+        document.getElementById('stock-analysis-modal').style.display = 'flex'
+        document.getElementById('analysis-loading').style.display = 'block'
+        document.getElementById('analysis-content').innerHTML = ''
+
+        try {
+          // Prepare analysis data
+          const priceData = stockData.price_data
+          const recentPrices = priceData.close.slice(-30) // Last 30 data points
+          const avgPrice =
+            recentPrices.reduce((a, b) => a + b, 0) / recentPrices.length
+          const highPrice = Math.max(...recentPrices)
+          const lowPrice = Math.min(...recentPrices)
+          const currentPriceNum = parseFloat(currentPrice.replace('$', ''))
+
+          // 获取当前语言设置
+          const currentLang = localStorage.getItem('lang') || 'en'
+
+          // 根据语言构建不同的prompt
+          let prompt
+          if (currentLang === 'zh') {
+            prompt = `作为专业的股票投资分析师，请分析以下股票数据并提供投资建议：
+
+股票代码: ${stockTicker}
+当前价格: ${currentPrice}
+日涨跌幅: ${dailyChange}
+开盘价: ${openPrice}
+成交量: ${volume}
+近30日平均价格: $${avgPrice.toFixed(2)}
+近30日最高价: $${highPrice.toFixed(2)}
+近30日最低价: $${lowPrice.toFixed(2)}
+
+请从以下维度进行分析：
+1. 技术分析（价格走势、支撑位和阻力位）
+2. 风险评估
+3. 短期和中长期投资建议
+4. 建议买入/卖出价位
+5. 止损建议
+
+请用专业但易懂的中文内容回答。`
+          } else {
+            prompt = `As a professional stock investment analyst, please analyze the following stock data and provide investment advice:
+
+Stock Code: ${stockTicker}
+Current Price: ${currentPrice}
+Daily Change: ${dailyChange}
+Opening Price: ${openPrice}
+Volume: ${volume}
+Recent 30-day Average Price: $${avgPrice.toFixed(2)}
+Recent 30-day High: $${highPrice.toFixed(2)}
+Recent 30-day Low: $${lowPrice.toFixed(2)}
+
+Please analyze from the following dimensions:
+1. Technical Analysis (price trends, support and resistance levels)
+2. Risk Assessment
+3. Short-term and medium-long term investment recommendations
+4. Recommended buy/sell price levels
+5. Stop-loss recommendations
+
+Please answer in English with professional yet understandable content.`
+          }
+
+          // Call AI analysis - using OpenAI API as example
+          // Note: Please replace with your actual API key
+          await streamAnalysis(prompt, currentLang)
+        } catch (error) {
+          console.error('Analysis failed:', error)
+          document.getElementById('analysis-loading').style.display = 'none'
+          
+          // 根据语言显示错误信息
+          const currentLang = localStorage.getItem('lang') || 'en'
+          const errorMessage = currentLang === 'zh' 
+            ? '分析失败，请检查API配置或网络连接'
+            : 'Analysis failed, please check API configuration or network connection'
+          
+          document.getElementById('analysis-content').innerHTML =
+            `<div style="color:#ef4444;text-align:center;padding:20px;">${errorMessage}</div>`
+        } finally {
+          // 清理控制器引用
+          currentAnalysisController = null
+        }
+      }
+
+      // Stream analysis results
+      async function streamAnalysis(prompt, language = 'en') {
+        const analysisContent = document.getElementById('analysis-content')
+        const analysisLoading = document.getElementById('analysis-loading')
+
+        // Variable to accumulate markdown content
+        let markdownContent = ''
+        let isStreamingComplete = false
+
+        // 创建新的 AbortController
+        currentAnalysisController = new AbortController()
+
+        try {
+          const response = await fetch(
+            'http://localhost:3000/api/analyze-stock',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ 
+                prompt: prompt,
+                language: language 
+              }),
+              signal: currentAnalysisController.signal // 添加中止信号
+            }
+          )
+
+          if (!response.ok) {
+            throw new Error(`API request failed: ${response.status}`)
+          }
+
+          analysisLoading.style.display = 'none'
+
+          const reader = response.body.getReader()
+          const decoder = new TextDecoder()
+
+          // Function to render markdown content with typewriter effect
+          function renderMarkdownWithTypewriter(markdownText) {
+            // Parse markdown to HTML
+            const htmlContent = marked.parse(markdownText)
+
+            // Apply custom styles to markdown elements
+            const styledHtml = htmlContent
+              .replace(
+                /<h1>/g,
+                '<h1 style="color:#1e293b;font-size:24px;margin:16px 0 12px 0;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">'
+              )
+              .replace(
+                /<h2>/g,
+                '<h2 style="color:#1e293b;font-size:20px;margin:16px 0 10px 0;border-bottom:1px solid #e2e8f0;padding-bottom:6px;">'
+              )
+              .replace(
+                /<h3>/g,
+                '<h3 style="color:#2563eb;font-size:18px;margin:14px 0 8px 0;">'
+              )
+              .replace(
+                /<h4>/g,
+                '<h4 style="color:#2563eb;font-size:16px;margin:12px 0 6px 0;">'
+              )
+              .replace(
+                /<h5>/g,
+                '<h5 style="color:#059669;font-size:14px;margin:10px 0 6px 0;font-weight:bold;">'
+              )
+              .replace(
+                /<h6>/g,
+                '<h6 style="color:#6b7280;font-size:13px;margin:8px 0 4px 0;font-weight:bold;">'
+              )
+              .replace(/<p>/g, '<p style="margin:8px 0;line-height:1.6;">')
+              .replace(/<ul>/g, '<ul style="margin:8px 0;padding-left:20px;">')
+              .replace(/<ol>/g, '<ol style="margin:8px 0;padding-left:20px;">')
+              .replace(/<li>/g, '<li style="margin:4px 0;">')
+              .replace(
+                /<strong>/g,
+                '<strong style="color:#1e293b;font-weight:bold;">'
+              )
+              .replace(/<em>/g, '<em style="color:#6b7280;font-style:italic;">')
+              .replace(
+                /<code>/g,
+                '<code style="background:#f1f5f9;padding:2px 4px;border-radius:3px;font-family:monospace;color:#dc2626;">'
+              )
+              .replace(
+                /<pre>/g,
+                '<pre style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:12px;margin:12px 0;overflow-x:auto;">'
+              )
+              .replace(
+                /<blockquote>/g,
+                '<blockquote style="border-left:4px solid #2563eb;padding-left:16px;margin:12px 0;color:#6b7280;font-style:italic;">'
+              )
+              .replace(
+                /<table>/g,
+                '<table style="border-collapse:collapse;width:100%;margin:12px 0;">'
+              )
+              .replace(
+                /<th>/g,
+                '<th style="border:1px solid #e2e8f0;padding:8px;background:#f8fafc;font-weight:bold;">'
+              )
+              .replace(
+                /<td>/g,
+                '<td style="border:1px solid #e2e8f0;padding:8px;">'
+              )
+
+            analysisContent.innerHTML = styledHtml
+            analysisContent.scrollTop = analysisContent.scrollHeight
+          }
+
+          while (true) {
+            // 检查是否已被中止
+            if (currentAnalysisController && currentAnalysisController.signal.aborted) {
+              console.log('Analysis request was aborted')
+              break
+            }
+
+            const { done, value } = await reader.read()
+            if (done) {
+              isStreamingComplete = true
+              break
+            }
+
+            const chunk = decoder.decode(value)
+            const lines = chunk.split('\n')
+
+            for (const line of lines) {
+              // 再次检查是否已被中止
+              if (currentAnalysisController && currentAnalysisController.signal.aborted) {
+                console.log('Analysis request was aborted during processing')
+                return
+              }
+
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6)
+                if (data === '[DONE]') {
+                  isStreamingComplete = true
+                  continue
+                }
+
+                try {
+                  const parsed = JSON.parse(data)
+                  if (parsed.error) {
+                    const errorLabel = language === 'zh' ? '错误' : 'Error'
+                    analysisContent.innerHTML += `<div style="color:#ef4444;">${errorLabel}: ${parsed.error}</div>`
+                    continue
+                  }
+                  const content = parsed.content
+                  if (content) {
+                    markdownContent += content
+                    // Re-render the complete markdown content with each update
+                    renderMarkdownWithTypewriter(markdownContent)
+                  }
+                } catch (e) {
+                  // Ignore parsing errors
+                }
+              }
+            }
+          }
+
+          // Final render when streaming is complete
+          if (isStreamingComplete && markdownContent) {
+            renderMarkdownWithTypewriter(markdownContent)
+          }
+        } catch (error) {
+          analysisLoading.style.display = 'none'
+
+          // 如果是中止错误，不显示错误信息
+          if (error.name === 'AbortError') {
+            console.log('Analysis request was aborted')
+            return
+          }
+
+          // If API call fails, show simulated analysis results
+          console.warn(
+            'AI API call failed, showing simulated analysis results:',
+            error
+          )
+
+          const stockTicker = document.getElementById('stock-selector').value
+
+          // Create mock analysis in Markdown format based on language
+          let mockMarkdown
+          if (language === 'zh') {
+            mockMarkdown = `# 📊 ${stockTicker} 股票投资分析报告
+
+## 🔍 技术分析
+- 当前价格相对于近期平均值**${
+              Math.random() > 0.5 ? '偏高' : '偏低'
+            }**，显示**${
+              Math.random() > 0.5 ? '超买' : '超卖'
+            }**信号
+- 成交量**${
+              Math.random() > 0.5 ? '放大' : '萎缩'
+            }**，市场参与度**${
+              Math.random() > 0.5 ? '较高' : '一般'
+            }**
+- 短期趋势：**${Math.random() > 0.5 ? '向上' : '整理'}**
+
+## ⚠️ 风险评估
+- **风险等级：** ${['低', '中', '高'][Math.floor(Math.random() * 3)]}
+- **波动性：** ${
+              Math.random() > 0.5 ? '高' : '中等'
+            }，适合**${
+              Math.random() > 0.5 ? '激进' : '稳健'
+            }**投资者
+
+## 💡 投资建议
+
+### 短期（1-2周）
+${
+  ['建议持有', '可适度买入', '建议减仓'][
+    Math.floor(Math.random() * 3)
+  ]
+}
+
+### 中期（1-3个月）
+${
+  ['看好上涨', '以整理为主', '谨慎看待'][
+    Math.floor(Math.random() * 3)
+  ]
+}
+
+## 🎯 交易建议
+
+> **关键交易价位：**
+> - **建议买入价：** 当前价格下方${(Math.random() * 5 + 2).toFixed(
+              1
+            )}%
+> - **目标价位：** 当前价格上方${(Math.random() * 10 + 5).toFixed(
+              1
+            )}%  
+> - **止损价位：** 当前价格下方${(Math.random() * 8 + 5).toFixed(
+              1
+            )}%
+
+---
+
+**⚡ 注意：** 本分析基于当前技术指标，市场变化迅速，投资决策时请结合基本面分析和个人风险承受能力。`
+          } else {
+            mockMarkdown = `# 📊 ${stockTicker} Stock Investment Analysis Report
+
+## 🔍 Technical Analysis
+- Current price relative to recent average is **${
+              Math.random() > 0.5 ? 'high' : 'low'
+            }**, showing **${
+              Math.random() > 0.5 ? 'overbought' : 'oversold'
+            }** signals
+- Trading volume **${
+              Math.random() > 0.5 ? 'expanded' : 'contracted'
+            }**, market participation is **${
+              Math.random() > 0.5 ? 'high' : 'moderate'
+            }**
+- Short-term trend: **${Math.random() > 0.5 ? 'upward' : 'consolidating'}**
+
+## ⚠️ Risk Assessment
+- **Risk level:** ${['Low', 'Medium', 'High'][Math.floor(Math.random() * 3)]}
+- **Volatility:** ${
+              Math.random() > 0.5 ? 'High' : 'Moderate'
+            }, suitable for **${
+              Math.random() > 0.5 ? 'aggressive' : 'conservative'
+            }** investors
+
+## 💡 Investment Recommendations
+
+### Short-term (1-2 weeks)
+${
+  ['Recommend holding', 'Can buy moderately', 'Recommend reducing position'][
+    Math.floor(Math.random() * 3)
+  ]
+}
+
+### Medium-term (1-3 months)
+${
+  ['Bullish on upside', 'Mainly consolidation', 'Cautious outlook'][
+    Math.floor(Math.random() * 3)
+  ]
+}
+
+## 🎯 Trading Recommendations
+
+> **Key Trading Levels:**
+> - **Recommended buy price:** ${(Math.random() * 5 + 2).toFixed(
+              1
+            )}% below current price
+> - **Target price:** ${(Math.random() * 10 + 5).toFixed(
+              1
+            )}% above current price  
+> - **Stop-loss price:** ${(Math.random() * 8 + 5).toFixed(
+              1
+            )}% below current price
+
+---
+
+**⚡ Note:** This analysis is based on current technical indicators. Markets change rapidly, please combine fundamental analysis and personal risk tolerance when making investment decisions.`
+          }
+
+          // Function to render markdown with custom styles
+          function renderMarkdownWithStyles(markdownText) {
+            const htmlContent = marked.parse(markdownText)
+
+            const styledHtml = htmlContent
+              .replace(
+                /<h1>/g,
+                '<h1 style="color:#1e293b;font-size:24px;margin:16px 0 12px 0;border-bottom:2px solid #e2e8f0;padding-bottom:8px;">'
+              )
+              .replace(
+                /<h2>/g,
+                '<h2 style="color:#1e293b;font-size:20px;margin:16px 0 10px 0;border-bottom:1px solid #e2e8f0;padding-bottom:6px;">'
+              )
+              .replace(
+                /<h3>/g,
+                '<h3 style="color:#2563eb;font-size:18px;margin:14px 0 8px 0;">'
+              )
+              .replace(
+                /<h4>/g,
+                '<h4 style="color:#2563eb;font-size:16px;margin:12px 0 6px 0;">'
+              )
+              .replace(
+                /<h5>/g,
+                '<h5 style="color:#059669;font-size:14px;margin:10px 0 6px 0;font-weight:bold;">'
+              )
+              .replace(
+                /<h6>/g,
+                '<h6 style="color:#6b7280;font-size:13px;margin:8px 0 4px 0;font-weight:bold;">'
+              )
+              .replace(/<p>/g, '<p style="margin:8px 0;line-height:1.6;">')
+              .replace(/<ul>/g, '<ul style="margin:8px 0;padding-left:20px;">')
+              .replace(/<ol>/g, '<ol style="margin:8px 0;padding-left:20px;">')
+              .replace(/<li>/g, '<li style="margin:4px 0;">')
+              .replace(
+                /<strong>/g,
+                '<strong style="color:#1e293b;font-weight:bold;">'
+              )
+              .replace(/<em>/g, '<em style="color:#6b7280;font-style:italic;">')
+              .replace(
+                /<code>/g,
+                '<code style="background:#f1f5f9;padding:2px 4px;border-radius:3px;font-family:monospace;color:#dc2626;">'
+              )
+              .replace(
+                /<pre>/g,
+                '<pre style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:12px;margin:12px 0;overflow-x:auto;">'
+              )
+              .replace(
+                /<blockquote>/g,
+                '<blockquote style="border-left:4px solid #2563eb;padding-left:16px;margin:12px 0;color:#6b7280;font-style:italic;background:#f8fafc;padding:12px;border-radius:6px;">'
+              )
+              .replace(
+                /<table>/g,
+                '<table style="border-collapse:collapse;width:100%;margin:12px 0;">'
+              )
+              .replace(
+                /<th>/g,
+                '<th style="border:1px solid #e2e8f0;padding:8px;background:#f8fafc;font-weight:bold;">'
+              )
+              .replace(
+                /<td>/g,
+                '<td style="border:1px solid #e2e8f0;padding:8px;">'
+              )
+              .replace(
+                /<hr>/g,
+                '<hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0;">'
+              )
+
+            return styledHtml
+          }
+
+          // Simulate streaming output effect with markdown
+          const styledHtml = renderMarkdownWithStyles(mockMarkdown)
+          const words = styledHtml.split('')
+          let index = 0
+
+          const typeWriter = () => {
+            if (index < words.length) {
+              analysisContent.innerHTML = styledHtml.substring(0, index + 1)
+              analysisContent.scrollTop = analysisContent.scrollHeight
+              index++
+              setTimeout(typeWriter, 15) // Adjust speed
+            }
+          }
+
+          typeWriter()
+        }
+      }
+      document.addEventListener('DOMContentLoaded', function () {
+        // Initialize Custom Stock Selector
+        initCustomStockSelector()
+
+        // Listen for language changes to update dynamic labels
+        window.addEventListener('languageChanged', function(e) {
+          // Update required amount display to reflect language change
+          updateRequiredAmountDisplay()
+          
+          // Update current holdings display to reflect language change
+          const stockTicker = document.getElementById('stock-selector').value
+          if (stockTicker) {
+            updateCurrentHoldingsDisplay(stockTicker)
+          }
+        })
+
+        // Buy/Sell button active state toggle
+        const buyBtn = document.getElementById('buy-btn')
+        const sellBtn = document.getElementById('sell-btn')
+        buyBtn.addEventListener('click', function () {
+          buyBtn.classList.add('active')
+          sellBtn.classList.remove('active')
+          // Update required amount display when switching to buy
+          updateRequiredAmountDisplay()
+        })
+        sellBtn.addEventListener('click', function () {
+          sellBtn.classList.add('active')
+          buyBtn.classList.remove('active')
+          // Update required amount display when switching to sell
+          updateRequiredAmountDisplay()
+        })
+
+        // Stock Analysis modal events
+        document
+          .getElementById('analyze-stock-btn')
+          .addEventListener('click', function () {
+            analyzeCurrentStock()
+          })
+
+        document
+          .querySelector('.close-analysis-modal')
+          .addEventListener('click', function () {
+            // 中止当前的分析请求
+            if (currentAnalysisController) {
+              currentAnalysisController.abort()
+              currentAnalysisController = null
+            }
+            document.getElementById('stock-analysis-modal').style.display =
+              'none'
+          })
+
+        // Click outside modal to close analysis window
+        document
+          .getElementById('stock-analysis-modal')
+          .addEventListener('click', function (e) {
+            if (e.target === this) {
+              // 中止当前的分析请求
+              if (currentAnalysisController) {
+                currentAnalysisController.abort()
+                currentAnalysisController = null
+              }
+              this.style.display = 'none'
+            }
+          })
+
+        // Add Trade modal events
+        document
+          .getElementById('add-trade-btn')
+          .addEventListener('click', async function () {
+            // Auto-fill stock ID with currently selected stock
+            const selectedStockValue =
+              document.getElementById('stock-selector').value
+            document.getElementById('stock-id-display').textContent =
+              selectedStockValue
+
+            // Auto-fill current price
+            const currentPriceText =
+              document.getElementById('current-price').textContent
+            document.getElementById('trade-price-display').textContent =
+              currentPriceText
+
+            // Activate BUY button by default
+            buyBtn.classList.add('active')
+            sellBtn.classList.remove('active')
+
+            // Update asset display in modal
+            updateAvailableAssetsDisplay()
+            updateRequiredAmountDisplay()
+            
+            // Update current holdings display
+            await updateCurrentHoldingsDisplay(selectedStockValue)
+
+            // Show modal with new CSS class
+            document.getElementById('add-trade-modal').style.display = 'flex'
+          })
+
+        // Add event listener for quantity input field to update required amount in real time
+        document
+          .getElementById('trade-quantity')
+          .addEventListener('input', function () {
+            updateRequiredAmountDisplay()
+          })
+
+        document
+          .querySelector('.close-modal')
+          .addEventListener('click', function () {
+            document.getElementById('add-trade-modal').style.display = 'none'
+          })
+
+        // Click outside modal to close
+        document
+          .getElementById('add-trade-modal')
+          .addEventListener('click', function (e) {
+            if (e.target === this) {
+              this.style.display = 'none'
+            }
+          })
+
+        // ESC key to close modal
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape') {
+            const tradeModal = document.getElementById('add-trade-modal')
+            const analysisModal = document.getElementById(
+              'stock-analysis-modal'
+            )
+            if (tradeModal && tradeModal.style.display === 'flex') {
+              tradeModal.style.display = 'none'
+            }
+            if (analysisModal && analysisModal.style.display === 'flex') {
+              analysisModal.style.display = 'none'
+            }
+          }
+        })
+        document
+          .getElementById('trade-form')
+          .addEventListener('submit', async function (e) {
+            e.preventDefault()
+
+            // Get form data
+            const stockId =
+              document.getElementById('stock-id-display').textContent
+            const priceText = document
+              .getElementById('trade-price-display')
+              .textContent.replace('$', '')
+            const price = parseFloat(priceText)
+            const quantityInput =
+              document.getElementById('trade-quantity').value
+            const quantity = parseInt(quantityInput)
+
+            // Get trade type (buy or sell)
+            const buyBtn = document.getElementById('buy-btn')
+            const sellBtn = document.getElementById('sell-btn')
+            let tradeType = 'BUY' // Default to buy
+            if (sellBtn.classList.contains('active')) {
+              tradeType = 'SELL'
+            }
+
+            // Validate input data
+            if (!(await validateTradeInput(quantity, price, tradeType, stockId))) {
+              return // Validation failed, do not continue processing
+            }
+
+            try {
+              // Send POST request to backend
+              // Use positive quantity for BUY, negative quantity for SELL
+              const finalQuantity = tradeType === 'SELL' ? -quantity : quantity
+
+              const tradeData = {
+                ticker: stockId,
+                trade_time: new Date()
+                  .toISOString()
+                  .slice(0, 19)
+                  .replace('T', ' '),
+                price: price,
+                quantity: finalQuantity,
+              }
+
+              const response = await fetch(
+                'http://localhost:3001/trades',
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(tradeData),
+                }
+              )
+
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`)
+              }
+
+              const responseData = await response.json()
+
+              // Save/update local cache
+              updateLocalTrades(responseData)
+
+              // 交易成功后，从后端重新获取最新的资产数据，而不是本地计算
+              await fetchAssetsSummary()
+              updateAvailableAssetsDisplay()
+
+              // Update holdings display after trade
+              await updateCurrentHoldingsDisplay(stockId)
+
+              // Close modal and reset form
+              document.getElementById('add-trade-modal').style.display = 'none'
+              document.getElementById('trade-form').reset()
+
+              alert('Trade record added successfully!')
+            } catch (error) {
+              console.error('Failed to submit trade:', error)
+              alert('Failed to submit trade. Please try again.')
+            }
+          })
+      })
+
+      // Start application
+      document.addEventListener('DOMContentLoaded', init)
+    </script>
+  </body>
+</html>
